@@ -1,0 +1,25 @@
+Copyright (c) 2026 MG. All Rights Reserved.
+
+MQ-Sentinel — IBM MQ Diagnostic MCP Server
+
+This software and associated documentation files (the "Software") are the
+proprietary and confidential property of MG ("Licensor"). All rights, title,
+and interest in and to the Software remain with Licensor.
+
+NO LICENSE is granted to any third party to use, copy, modify, merge,
+publish, distribute, sublicense, or sell copies of the Software without the
+prior written consent of Licensor.
+
+Unauthorized use, reproduction, or distribution of the Software, in whole
+or in part, is strictly prohibited and may result in civil and criminal
+penalties.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. IN NO EVENT SHALL
+THE LICENSOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
+
+IBM®, IBM MQ®, and z/OS® are trademarks of IBM Corporation. MG is not
+affiliated with, endorsed by, or sponsored by IBM Corporation.

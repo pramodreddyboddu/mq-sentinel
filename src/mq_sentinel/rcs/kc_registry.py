@@ -99,6 +99,57 @@ class KCRegistry:
                     mq_versions=("9.2", "9.3", "9.4"),
                 ),
             ],
+            "AMQ9456": [
+                KCDocRef(
+                    title="AMQ9456E: Update not received from full repository",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=messages-amq9456e",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "AMQ9484": [
+                KCDocRef(
+                    title="AMQ9484E: Cluster channel error",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=messages-amq9484e",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "AMQ9508": [
+                KCDocRef(
+                    title="AMQ9508E: Program cannot connect to queue manager",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=messages-amq9508e",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "AMQ9764": [
+                KCDocRef(
+                    title="AMQ9764E: Cluster send channel not started",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=messages-amq9764e",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+        }
+        self._topics: dict[str, list[KCDocRef]] = {
+            "cluster_partial_repository": [
+                KCDocRef(
+                    title="Repositories in a cluster",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=clusters-cluster-repositories",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "cluster_refresh": [
+                KCDocRef(
+                    title="REFRESH CLUSTER (refresh cluster)",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=commands-refresh-cluster",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "cluster_stale_entry": [
+                KCDocRef(
+                    title="Troubleshooting cluster problems",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=clusters-troubleshooting",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
         }
 
     def lookup_reason(self, reason: int, mq_version: str | None = None) -> list[KCDocRef]:
@@ -107,6 +158,10 @@ class KCRegistry:
 
     def lookup_amq(self, code: str, mq_version: str | None = None) -> list[KCDocRef]:
         refs = self._by_amq.get(code.upper(), [])
+        return self._filter_version(refs, mq_version)
+
+    def lookup_topic(self, topic: str, mq_version: str | None = None) -> list[KCDocRef]:
+        refs = self._topics.get(topic, [])
         return self._filter_version(refs, mq_version)
 
     @staticmethod

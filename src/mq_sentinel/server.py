@@ -27,6 +27,8 @@ from mq_sentinel.security import RateLimiter, sanitize_mq_output
 from mq_sentinel.telemetry import configure_telemetry, get_logger
 from mq_sentinel.tools.channels import TOOL_NAME as CHANNELS_TOOL_NAME
 from mq_sentinel.tools.channels import diagnose_failed_channels
+from mq_sentinel.tools.cluster import TOOL_NAME as CLUSTER_TOOL_NAME
+from mq_sentinel.tools.cluster import check_cluster_health
 from mq_sentinel.tools.dlq import TOOL_NAME as DLQ_TOOL_NAME
 from mq_sentinel.tools.dlq import analyze_dlq
 
@@ -127,6 +129,21 @@ class MQSentinelServer:
             sample_size=sample_size,
         )
 
+    def check_cluster_health(self, qm_name: str, principal: Principal) -> dict[str, Any]:
+        try:
+            entry = self._inventory.get(qm_name)
+        except LookupError:
+            authorize(principal, Action.READ_NONPROD)
+            raise
+        action = Action.READ_PROD if entry.environment == "prod" else Action.READ_NONPROD
+        authorize(principal, action)
+        return check_cluster_health(
+            qm_name=qm_name,
+            connector_factory=self._connector_factory,
+            inventory=self._inventory,
+            secrets=self._secrets,
+        )
+
     # --- dispatch ---------------------------------------------------------
 
     def dispatch(
@@ -160,6 +177,10 @@ class MQSentinelServer:
                 if not isinstance(sample, int):
                     raise ValueError("sample_size must be an int")
                 result = self.analyze_dlq(target_qm, principal, sample_size=sample)
+            elif tool == CLUSTER_TOOL_NAME:
+                if not isinstance(target_qm, str):
+                    raise ValueError("qm_name (str) parameter required")
+                result = self.check_cluster_health(target_qm, principal)
             else:
                 raise LookupError(f"unknown tool: {tool}")
 
@@ -240,6 +261,21 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
             token=dev_token,
             tool=DLQ_TOOL_NAME,
             params={"qm_name": qm_name, "sample_size": sample_size},
+        )
+
+    @mcp.tool(
+        description=(
+            "Check cluster health: detect partial repositories, unhealthy "
+            "cluster channels, stale CLUSQMGR entries, suspended members, "
+            "and orphan QMs. Returns RCS findings with IBM KC references. "
+            "READ-ONLY."
+        ),
+    )
+    def check_cluster_health(qm_name: str) -> dict[str, Any]:
+        return srv.dispatch(
+            token=dev_token,
+            tool=CLUSTER_TOOL_NAME,
+            params={"qm_name": qm_name},
         )
 
     mcp.run()

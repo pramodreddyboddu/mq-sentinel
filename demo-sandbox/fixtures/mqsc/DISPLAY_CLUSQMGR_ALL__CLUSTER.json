@@ -1,5 +1,8 @@
 {
-  "rows": [],
-  "raw": "",
+  "rows": [
+    {"CLUSQMGR": "DEMO_QM", "CLUSTER": "PAYMENTS"},
+    {"CLUSQMGR": "PARTNER_QM", "CLUSTER": "PAYMENTS"}
+  ],
+  "raw": "CLUSQMGR(DEMO_QM) CLUSTER(PAYMENTS)\nCLUSQMGR(PARTNER_QM) CLUSTER(PAYMENTS)",
   "completion_code": 0
 }

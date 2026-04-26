@@ -1,0 +1,5 @@
+{
+  "rows": [{"REPOS": " ", "REPOSNL": " ", "QMNAME": "DEMO_QM"}],
+  "raw": "QMNAME(DEMO_QM) REPOS( ) REPOSNL( )",
+  "completion_code": 0
+}

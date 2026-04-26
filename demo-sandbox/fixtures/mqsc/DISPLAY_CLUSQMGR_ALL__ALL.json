@@ -1,0 +1,54 @@
+{
+  "rows": [
+    {
+      "CLUSQMGR": "DEMO_QM",
+      "CLUSTER": "PAYMENTS",
+      "QMTYPE": "NORMAL",
+      "STATUS": "RUNNING",
+      "CHANNEL": "TO.DEMO_QM",
+      "CONNAME": "demo.example.internal(1414)",
+      "DEFTYPE": "CLUSRCVR",
+      "SUSPEND": "NO",
+      "CLUSDATE": "2026-04-26",
+      "CLUSTIME": "08:00:00"
+    },
+    {
+      "CLUSQMGR": "PARTNER_QM",
+      "CLUSTER": "PAYMENTS",
+      "QMTYPE": "NORMAL",
+      "STATUS": "RETRYING",
+      "CHANNEL": "TO.PARTNER_QM",
+      "CONNAME": "partner.example.internal(1414)",
+      "DEFTYPE": "CLUSSDR",
+      "SUSPEND": "NO",
+      "CLUSDATE": "2026-03-15",
+      "CLUSTIME": "12:30:00"
+    },
+    {
+      "CLUSQMGR": "MAINT_QM",
+      "CLUSTER": "PAYMENTS",
+      "QMTYPE": "NORMAL",
+      "STATUS": "RUNNING",
+      "CHANNEL": "TO.MAINT_QM",
+      "CONNAME": "maint.example.internal(1414)",
+      "DEFTYPE": "CLUSSDR",
+      "SUSPEND": "YES",
+      "CLUSDATE": "2026-04-25",
+      "CLUSTIME": "14:00:00"
+    },
+    {
+      "CLUSQMGR": "ORPHAN_QM",
+      "CLUSTER": "ORDERS",
+      "QMTYPE": "NORMAL",
+      "STATUS": "STOPPED",
+      "CHANNEL": "TO.ORPHAN_QM",
+      "CONNAME": "orphan.example.internal(1414)",
+      "DEFTYPE": "CLUSSDR",
+      "SUSPEND": "NO",
+      "CLUSDATE": "2026-04-22",
+      "CLUSTIME": "09:00:00"
+    }
+  ],
+  "raw": "CLUSQMGR(DEMO_QM) CLUSTER(PAYMENTS) QMTYPE(NORMAL) STATUS(RUNNING)\nCLUSQMGR(PARTNER_QM) CLUSTER(PAYMENTS) QMTYPE(NORMAL) STATUS(RETRYING) CLUSDATE(2026-03-15)\nCLUSQMGR(MAINT_QM) CLUSTER(PAYMENTS) SUSPEND(YES)\nCLUSQMGR(ORPHAN_QM) CLUSTER(ORDERS) STATUS(STOPPED)",
+  "completion_code": 0
+}

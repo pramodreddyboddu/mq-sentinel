@@ -1,0 +1,5 @@
+{
+  "rows": [{"QMNAME": "DEMO_QM", "STATUS": "RUNNING"}],
+  "raw": "QMNAME(DEMO_QM) STATUS(RUNNING) NATIVEHA(NO)",
+  "completion_code": 0
+}

@@ -1,0 +1,35 @@
+{
+  "rows": [
+    {
+      "CHANNEL": "APP.SVRCONN",
+      "STATUS": "RETRYING",
+      "REASON": "2035",
+      "RQMNAME": "REMOTE_QM",
+      "CONNAME": "10.0.0.42(1414)",
+      "CHLTYPE": "SVRCONN"
+    },
+    {
+      "CHANNEL": "TO.PARTNER",
+      "STATUS": "RETRYING",
+      "REASON": "2009",
+      "RQMNAME": "PARTNER_QM",
+      "CONNAME": "partner.example.internal(1414)",
+      "CHLTYPE": "SDR"
+    },
+    {
+      "CHANNEL": "INDOUBT.RCVR",
+      "STATUS": "INDOUBT",
+      "REASON": "0",
+      "RQMNAME": "PARTNER_QM",
+      "CHLTYPE": "RCVR"
+    },
+    {
+      "CHANNEL": "HEALTHY.SVRCONN",
+      "STATUS": "RUNNING",
+      "REASON": "0",
+      "CHLTYPE": "SVRCONN"
+    }
+  ],
+  "raw": "CHANNEL(APP.SVRCONN) STATUS(RETRYING) REASON(2035)\nCHANNEL(TO.PARTNER) STATUS(RETRYING) REASON(2009)\nCHANNEL(INDOUBT.RCVR) STATUS(INDOUBT) REASON(0)\nCHANNEL(HEALTHY.SVRCONN) STATUS(RUNNING) REASON(0)\nAMQ9202E: Remote host not available\nAMQ9503E: Channel negotiation failed",
+  "completion_code": 0
+}

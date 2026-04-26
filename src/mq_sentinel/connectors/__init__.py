@@ -2,5 +2,12 @@
 
 from mq_sentinel.connectors.base import MQConnectionError, MQConnector, MQSCResult
 from mq_sentinel.connectors.fixture import FixtureConnector
+from mq_sentinel.connectors.pymqi_connector import PymqiConnector
 
-__all__ = ["FixtureConnector", "MQConnectionError", "MQConnector", "MQSCResult"]
+__all__ = [
+    "FixtureConnector",
+    "MQConnectionError",
+    "MQConnector",
+    "MQSCResult",
+    "PymqiConnector",
+]

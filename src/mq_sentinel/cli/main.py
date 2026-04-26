@@ -10,7 +10,7 @@ import typer
 from mq_sentinel import __version__
 from mq_sentinel.audit.logger import verify_chain
 from mq_sentinel.config import load_settings
-from mq_sentinel.server import MQSentinelServer
+from mq_sentinel.server import MQSentinelServer, serve_stdio
 
 app = typer.Typer(
     name="mq-sentinel",
@@ -49,13 +49,13 @@ def health() -> None:
 
 @app.command()
 def serve() -> None:
-    """Start the MCP server (Phase 2 will wire the MCP transport here)."""
+    """Start the MCP server over stdio (default transport)."""
     settings = load_settings()
     typer.echo(
-        f"mq-sentinel {__version__} would start on "
-        f"{settings.server.transport}://{settings.server.http_host}:{settings.server.http_port}"
+        f"mq-sentinel {__version__} starting on stdio (env={settings.server.environment})",
+        err=True,
     )
-    typer.echo("MCP transport wiring lands in the next commit.")
+    serve_stdio()
 
 
 if __name__ == "__main__":  # pragma: no cover

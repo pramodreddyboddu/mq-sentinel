@@ -1,0 +1,5 @@
+{
+  "rows": [{"VERSION": "9.4.0.0", "QMNAME": "DEMO_QM"}],
+  "raw": "QMNAME(DEMO_QM) VERSION(9.4.0.0)",
+  "completion_code": 0
+}

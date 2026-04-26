@@ -7,7 +7,12 @@ from pathlib import Path
 
 import orjson
 
-from mq_sentinel.connectors.base import MQConnectionError, MQSCResult
+from mq_sentinel.connectors.base import (
+    BrowseResult,
+    DLQHeader,
+    MQConnectionError,
+    MQSCResult,
+)
 from mq_sentinel.inventory.models import QMEntry
 from mq_sentinel.secrets.backend import MQCredential
 from mq_sentinel.security.allowlist import assert_mqsc_allowed, assert_shell_allowed
@@ -58,6 +63,47 @@ class FixtureConnector:
         if not fixture_path.exists():
             return ""
         return fixture_path.read_text(encoding="utf-8")
+
+    def browse_dlq(self, queue_name: str, max_messages: int = 50) -> BrowseResult:
+        if not self._connected:
+            raise MQConnectionError("not connected")
+        key = queue_name.upper().replace("/", "_").replace(" ", "_")
+        fixture_path = self._dir / "dlq" / f"{key}.json"
+        if not fixture_path.exists():
+            return BrowseResult(
+                queue_name=queue_name,
+                qm_name=self._qm or "",
+                sample_size=0,
+                queue_depth=0,
+                headers=[],
+            )
+        data = orjson.loads(fixture_path.read_bytes())
+        headers_raw = data.get("headers", [])[:max_messages]
+        headers = [
+            DLQHeader(
+                reason_code=int(h.get("reason_code", 0)),
+                feedback=int(h.get("feedback", 0)),
+                put_application_name=str(h.get("put_application_name", "")),
+                put_application_type=str(h.get("put_application_type", "")),
+                put_date=str(h.get("put_date", "")),
+                put_time=str(h.get("put_time", "")),
+                dest_q_name=str(h.get("dest_q_name", "")),
+                dest_q_mgr_name=str(h.get("dest_q_mgr_name", "")),
+                backout_count=int(h.get("backout_count", 0)),
+                body_length=int(h.get("body_length", 0)),
+                msg_id_hash=str(h.get("msg_id_hash", "")),
+                encoding=h.get("encoding"),
+                coded_char_set_id=h.get("coded_char_set_id"),
+            )
+            for h in headers_raw
+        ]
+        return BrowseResult(
+            queue_name=queue_name,
+            qm_name=self._qm or "",
+            sample_size=len(headers),
+            queue_depth=int(data.get("queue_depth", len(headers_raw))),
+            headers=headers,
+        )
 
     @staticmethod
     def _fingerprint(command: str) -> str:

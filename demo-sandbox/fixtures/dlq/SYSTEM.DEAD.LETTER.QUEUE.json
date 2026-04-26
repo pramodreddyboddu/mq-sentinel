@@ -1,0 +1,96 @@
+{
+  "queue_depth": 1247,
+  "headers": [
+    {
+      "reason_code": 2035,
+      "feedback": 0,
+      "put_application_name": "PAYMENTS.PUTTER",
+      "put_application_type": "6",
+      "put_date": "2026-04-22",
+      "put_time": "14:30:11",
+      "dest_q_name": "PAYMENTS.IN",
+      "dest_q_mgr_name": "DEMO_QM",
+      "backout_count": 0,
+      "body_length": 4096,
+      "msg_id_hash": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdefabcdef"
+    },
+    {
+      "reason_code": 2035,
+      "feedback": 0,
+      "put_application_name": "PAYMENTS.PUTTER",
+      "put_application_type": "6",
+      "put_date": "2026-04-22",
+      "put_time": "14:30:14",
+      "dest_q_name": "PAYMENTS.IN",
+      "dest_q_mgr_name": "DEMO_QM",
+      "backout_count": 0,
+      "body_length": 4128,
+      "msg_id_hash": "b2c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdefabcdef01"
+    },
+    {
+      "reason_code": 2030,
+      "feedback": 0,
+      "put_application_name": "BATCH.LOADER",
+      "put_application_type": "11",
+      "put_date": "2026-04-23",
+      "put_time": "02:15:00",
+      "dest_q_name": "ORDERS.IN",
+      "dest_q_mgr_name": "DEMO_QM",
+      "backout_count": 0,
+      "body_length": 524288,
+      "msg_id_hash": "c3d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdefabcdef0102"
+    },
+    {
+      "reason_code": 2053,
+      "feedback": 0,
+      "put_application_name": "INVENTORY.SVC",
+      "put_application_type": "6",
+      "put_date": "2026-04-23",
+      "put_time": "08:45:22",
+      "dest_q_name": "INVENTORY.IN",
+      "dest_q_mgr_name": "DEMO_QM",
+      "backout_count": 0,
+      "body_length": 2048,
+      "msg_id_hash": "d4e5f60718293a4b5c6d7e8f9012345678901234567890abcdefabcdef010203"
+    },
+    {
+      "reason_code": 2051,
+      "feedback": 0,
+      "put_application_name": "AUDIT.WRITER",
+      "put_application_type": "6",
+      "put_date": "2026-04-23",
+      "put_time": "11:02:09",
+      "dest_q_name": "AUDIT.LOG",
+      "dest_q_mgr_name": "DEMO_QM",
+      "backout_count": 0,
+      "body_length": 1024,
+      "msg_id_hash": "e5f60718293a4b5c6d7e8f9012345678901234567890abcdefabcdef01020304"
+    },
+    {
+      "reason_code": 2035,
+      "feedback": 0,
+      "put_application_name": "POISON.PROCESSOR",
+      "put_application_type": "6",
+      "put_date": "2026-04-26",
+      "put_time": "09:11:05",
+      "dest_q_name": "PAYMENTS.IN",
+      "dest_q_mgr_name": "DEMO_QM",
+      "backout_count": 7,
+      "body_length": 3072,
+      "msg_id_hash": "f60718293a4b5c6d7e8f9012345678901234567890abcdefabcdef0102030405"
+    },
+    {
+      "reason_code": 2035,
+      "feedback": 0,
+      "put_application_name": "POISON.PROCESSOR",
+      "put_application_type": "6",
+      "put_date": "2026-04-26",
+      "put_time": "09:11:09",
+      "dest_q_name": "PAYMENTS.IN",
+      "dest_q_mgr_name": "DEMO_QM",
+      "backout_count": 6,
+      "body_length": 3072,
+      "msg_id_hash": "0718293a4b5c6d7e8f9012345678901234567890abcdefabcdef010203040506"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "rows": [{"DEADQ": "SYSTEM.DEAD.LETTER.QUEUE", "QMNAME": "DEMO_QM"}],
+  "raw": "QMNAME(DEMO_QM) DEADQ(SYSTEM.DEAD.LETTER.QUEUE)",
+  "completion_code": 0
+}

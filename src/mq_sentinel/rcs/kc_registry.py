@@ -62,6 +62,20 @@ class KCRegistry:
                     mq_versions=("9.2", "9.3", "9.4"),
                 ),
             ],
+            2053: [
+                KCDocRef(
+                    title="2053 (0805) MQRC_Q_FULL",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2053-0805-rc2053-mqrc-q-full",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            2079: [
+                KCDocRef(
+                    title="2079 (081F) MQRC_TRUNCATED_MSG_ACCEPTED",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2079-081f-rc2079-mqrc-truncated-msg-accepted",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
         }
         self._by_amq: dict[str, list[KCDocRef]] = {
             "AMQ9202": [

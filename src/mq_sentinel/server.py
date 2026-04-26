@@ -27,6 +27,8 @@ from mq_sentinel.security import RateLimiter, sanitize_mq_output
 from mq_sentinel.telemetry import configure_telemetry, get_logger
 from mq_sentinel.tools.channels import TOOL_NAME as CHANNELS_TOOL_NAME
 from mq_sentinel.tools.channels import diagnose_failed_channels
+from mq_sentinel.tools.dlq import TOOL_NAME as DLQ_TOOL_NAME
+from mq_sentinel.tools.dlq import analyze_dlq
 
 
 def _hash_params(params: dict[str, Any]) -> str:
@@ -104,6 +106,27 @@ class MQSentinelServer:
             secrets=self._secrets,
         )
 
+    def analyze_dlq(
+        self,
+        qm_name: str,
+        principal: Principal,
+        sample_size: int = 50,
+    ) -> dict[str, Any]:
+        try:
+            entry = self._inventory.get(qm_name)
+        except LookupError:
+            authorize(principal, Action.READ_NONPROD)
+            raise
+        action = Action.READ_PROD if entry.environment == "prod" else Action.READ_NONPROD
+        authorize(principal, action)
+        return analyze_dlq(
+            qm_name=qm_name,
+            connector_factory=self._connector_factory,
+            inventory=self._inventory,
+            secrets=self._secrets,
+            sample_size=sample_size,
+        )
+
     # --- dispatch ---------------------------------------------------------
 
     def dispatch(
@@ -130,6 +153,13 @@ class MQSentinelServer:
                 if not isinstance(target_qm, str):
                     raise ValueError("qm_name (str) parameter required")
                 result = self.diagnose_channels(target_qm, principal)
+            elif tool == DLQ_TOOL_NAME:
+                if not isinstance(target_qm, str):
+                    raise ValueError("qm_name (str) parameter required")
+                sample = params.get("sample_size", 50)
+                if not isinstance(sample, int):
+                    raise ValueError("sample_size must be an int")
+                result = self.analyze_dlq(target_qm, principal, sample_size=sample)
             else:
                 raise LookupError(f"unknown tool: {tool}")
 
@@ -195,6 +225,21 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
             token=dev_token,
             tool=CHANNELS_TOOL_NAME,
             params={"qm_name": qm_name},
+        )
+
+    @mcp.tool(
+        description=(
+            "Inspect the dead-letter queue (HEADERS ONLY — message bodies "
+            "are never read). Groups DLQ entries by MQ reason code, surfaces "
+            "backout-loop offenders, and returns RCS findings with IBM KC "
+            "references. READ-ONLY."
+        ),
+    )
+    def analyze_dlq_and_suggest_reprocessing(qm_name: str, sample_size: int = 50) -> dict[str, Any]:
+        return srv.dispatch(
+            token=dev_token,
+            tool=DLQ_TOOL_NAME,
+            params={"qm_name": qm_name, "sample_size": sample_size},
         )
 
     mcp.run()

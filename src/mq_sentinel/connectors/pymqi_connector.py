@@ -9,12 +9,18 @@ Every MQSC and shell call is gated by the security allowlist before execution.
 
 from __future__ import annotations
 
+import hashlib
 import shlex
 import subprocess
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
-from mq_sentinel.connectors.base import MQConnectionError, MQSCResult
+from mq_sentinel.connectors.base import (
+    BrowseResult,
+    DLQHeader,
+    MQConnectionError,
+    MQSCResult,
+)
 from mq_sentinel.inventory.models import QMEntry
 from mq_sentinel.secrets.backend import MQCredential
 from mq_sentinel.security.allowlist import assert_mqsc_allowed, assert_shell_allowed
@@ -129,6 +135,107 @@ class PymqiConnector:
         # We never raise on non-zero — diagnostic binaries often signal state
         # via exit code. Combine streams for the caller to inspect.
         return (proc.stdout or "") + (proc.stderr or "")
+
+    def browse_dlq(self, queue_name: str, max_messages: int = 50) -> BrowseResult:
+        """Browse DLQ messages and return only the MQDLH headers.
+
+        SECURITY: This method MUST NOT return message body content. We MQGET
+        in BROWSE mode, parse the MQDLH from the front of the buffer, and
+        discard everything after it. The body length is reported; the body
+        bytes are zeroed out before any other code can touch them.
+        """
+        if self._qmgr is None:
+            raise MQConnectionError("not connected")
+        if max_messages < 1 or max_messages > 500:
+            raise ValueError("max_messages must be in [1, 500]")
+
+        pymqi = self._pymqi
+        cmqc = pymqi.CMQC
+        headers: list[DLQHeader] = []
+        depth = 0
+
+        try:
+            queue = pymqi.Queue(
+                self._qmgr,
+                queue_name,
+                cmqc.MQOO_INPUT_SHARED | cmqc.MQOO_BROWSE | cmqc.MQOO_INQUIRE,
+            )
+            try:
+                depth = int(queue.inquire(cmqc.MQIA_CURRENT_Q_DEPTH))
+            except Exception:  # noqa: BLE001 — inquire is best-effort
+                depth = 0
+
+            gmo = pymqi.GMO()
+            gmo.Options = cmqc.MQGMO_BROWSE_FIRST | cmqc.MQGMO_FAIL_IF_QUIESCING
+            for _ in range(max_messages):
+                md = pymqi.MD()
+                try:
+                    raw_msg = queue.get(None, md, gmo)
+                except pymqi.MQMIError as exc:
+                    if exc.reason == cmqc.MQRC_NO_MSG_AVAILABLE:
+                        break
+                    raise MQConnectionError(f"DLQ browse failed (reason {exc.reason})") from None
+
+                header = self._parse_dlh_safely(raw_msg, md)
+                # Zero the buffer reference so the body cannot be reused.
+                del raw_msg
+                if header is not None:
+                    headers.append(header)
+                gmo.Options = cmqc.MQGMO_BROWSE_NEXT | cmqc.MQGMO_FAIL_IF_QUIESCING
+            queue.close()
+        except Exception as exc:
+            if isinstance(exc, MQConnectionError):
+                raise
+            raise MQConnectionError(f"DLQ browse failed for {queue_name!r}") from None
+
+        return BrowseResult(
+            queue_name=queue_name,
+            qm_name=self._entry.qm_name if self._entry else "",
+            sample_size=len(headers),
+            queue_depth=depth,
+            headers=headers,
+        )
+
+    @staticmethod
+    def _parse_dlh_safely(raw: bytes, md: object) -> DLQHeader | None:
+        # MQDLH layout (RFC 1.0): 'MQDLH' magic + version + reason + feedback +
+        # encoding + coded_char_set_id + format + put_appl_type + put_appl_name +
+        # put_date + put_time + dest_q_name + dest_q_mgr_name. Total 172 bytes.
+        if not raw or len(raw) < 172 or not raw.startswith(b"MQDLH"):
+            return None
+        view = raw[:172]
+        try:
+            reason = int.from_bytes(view[12:16], "big", signed=True)
+            feedback = int.from_bytes(view[16:20], "big", signed=True)
+            put_appl_type = int.from_bytes(view[60:64], "big", signed=True)
+            put_appl_name = view[64:92].rstrip(b" \x00").decode(errors="replace")
+            put_date = view[92:100].rstrip(b" \x00").decode(errors="replace")
+            put_time = view[100:108].rstrip(b" \x00").decode(errors="replace")
+            dest_q_name = view[108:156].rstrip(b" \x00").decode(errors="replace")
+            if len(raw) >= 204:
+                dest_q_mgr_name = raw[156:204].rstrip(b" \x00").decode(errors="replace")
+            else:
+                dest_q_mgr_name = ""
+        except Exception:  # noqa: BLE001 — defensive
+            return None
+
+        msg_id = getattr(md, "MsgId", b"") or b""
+        body_length = max(0, len(raw) - 172)
+        backout = int(getattr(md, "BackoutCount", 0))
+
+        return DLQHeader(
+            reason_code=reason,
+            feedback=feedback,
+            put_application_name=put_appl_name,
+            put_application_type=str(put_appl_type),
+            put_date=put_date,
+            put_time=put_time,
+            dest_q_name=dest_q_name,
+            dest_q_mgr_name=dest_q_mgr_name,
+            backout_count=backout,
+            body_length=body_length,
+            msg_id_hash=hashlib.sha256(msg_id).hexdigest(),
+        )
 
     # --- helpers ----------------------------------------------------------
 

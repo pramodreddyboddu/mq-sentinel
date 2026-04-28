@@ -16,7 +16,12 @@ import orjson
 
 from mq_sentinel import __version__
 from mq_sentinel.audit import AuditEvent, AuditLogger
-from mq_sentinel.auth.oidc import Principal, StubOIDCVerifier
+from mq_sentinel.auth.oidc import (
+    OIDCVerifier,
+    Principal,
+    RealOIDCVerifier,
+    StubOIDCVerifier,
+)
 from mq_sentinel.auth.rbac import Action, authorize
 from mq_sentinel.config import Settings, load_settings
 from mq_sentinel.connectors.base import MQConnector
@@ -59,6 +64,7 @@ class MQSentinelServer:
         inventory: InventoryRegistry | None = None,
         secrets: SecretsBackend | None = None,
         connector_factory: Callable[[], MQConnector] | None = None,
+        verifier: OIDCVerifier | None = None,
     ) -> None:
         self._settings = settings or load_settings()
         configure_telemetry(self._settings.telemetry)
@@ -68,7 +74,7 @@ class MQSentinelServer:
             rate_per_minute=self._settings.security.rate_limit_per_minute,
             burst=self._settings.security.rate_limit_per_minute,
         )
-        self._verifier = StubOIDCVerifier()
+        self._verifier: OIDCVerifier = verifier or self._default_verifier()
         self._inventory: InventoryRegistry = inventory or InMemoryInventory()
         self._secrets: SecretsBackend = secrets or _NullSecrets()
         self._connector_factory: Callable[[], MQConnector] = (
@@ -79,6 +85,30 @@ class MQSentinelServer:
     def _default_connector_factory() -> MQConnector:
         # In dev, fall back to a fixture connector pointed at demo-sandbox.
         return FixtureConnector(Path("./demo-sandbox/fixtures"))
+
+    def _default_verifier(self) -> OIDCVerifier:
+        """Build a verifier from settings.
+
+        - If `auth.disable_auth_for_local_dev` is true, use the stub.
+        - Else if OIDC issuer + audience + JWKS URL are configured, use the
+          production verifier.
+        - Else (incomplete config) refuse to silently fall back in prod.
+        """
+        auth = self._settings.auth
+        if auth.disable_auth_for_local_dev:
+            return StubOIDCVerifier()
+        if auth.oidc_issuer and auth.oidc_audience and auth.oidc_jwks_url:
+            return RealOIDCVerifier(
+                issuer=auth.oidc_issuer,
+                audience=auth.oidc_audience,
+                jwks_url=auth.oidc_jwks_url,
+            )
+        if self._settings.server.environment == "prod":
+            raise RuntimeError(
+                "production environment requires complete OIDC configuration "
+                "(MQS_AUTH_OIDC_ISSUER, MQS_AUTH_OIDC_AUDIENCE, MQS_AUTH_OIDC_JWKS_URL)"
+            )
+        return StubOIDCVerifier()
 
     # --- tool surface -----------------------------------------------------
 

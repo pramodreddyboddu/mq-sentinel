@@ -48,6 +48,19 @@ uv run pytest -q
 uv run pytest -q -m security   # security-only suite must stay green
 ```
 
+## Transports
+
+```bash
+# stdio (default — for Claude Desktop, Cursor, Claude Code)
+uv run mq-sentinel serve
+
+# HTTP (production — OIDC bearer auth, /healthz, /readyz, /metrics)
+uv run mq-sentinel serve --transport http --host 0.0.0.0 --port 8080
+```
+
+See [docs/http-transport.md](docs/http-transport.md) for the OIDC config,
+endpoint reference, and operational notes.
+
 ## Repository layout
 
 ```

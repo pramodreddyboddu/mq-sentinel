@@ -28,6 +28,30 @@ spec:
             - name: {{ $k }}
               value: "{{ $v }}"
             {{- end }}
+            {{- if .Values.oidc.issuer }}
+            - name: MQS_AUTH_OIDC_ISSUER
+              value: "{{ .Values.oidc.issuer }}"
+            {{- end }}
+            {{- if .Values.oidc.audience }}
+            - name: MQS_AUTH_OIDC_AUDIENCE
+              value: "{{ .Values.oidc.audience }}"
+            {{- end }}
+            {{- if .Values.oidc.jwksUrl }}
+            - name: MQS_AUTH_OIDC_JWKS_URL
+              value: "{{ .Values.oidc.jwksUrl }}"
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: {{ .Values.service.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:

@@ -8,14 +8,21 @@ replicaCount: 2
 env:
   MQS_SERVER_ENVIRONMENT: prod
   MQS_SERVER_TRANSPORT: http
+  MQS_SERVER_HTTP_HOST: "0.0.0.0"
   MQS_SERVER_HTTP_PORT: "8080"
   MQS_AUDIT_LOG_PATH: /var/audit/audit.jsonl
   MQS_SECURITY_RATE_LIMIT_PER_MINUTE: "60"
+  # OIDC config — required in production. Inject via the Helm `oidc` block.
+  # MQS_AUTH_OIDC_ISSUER:    set from values.oidc.issuer
+  # MQS_AUTH_OIDC_AUDIENCE:  set from values.oidc.audience
+  # MQS_AUTH_OIDC_JWKS_URL:  set from values.oidc.jwksUrl
 
+# OIDC — REQUIRED for prod. The deployment refuses to start if any of these
+# are empty when MQS_SERVER_ENVIRONMENT=prod.
 oidc:
-  issuer: ""
-  audience: ""
-  jwksUrl: ""
+  issuer: ""       # e.g. https://login.example.com/realms/mq-sentinel
+  audience: ""     # e.g. mq-sentinel
+  jwksUrl: ""      # e.g. https://login.example.com/realms/mq-sentinel/protocol/openid-connect/certs
 
 securityContext:
   runAsNonRoot: true

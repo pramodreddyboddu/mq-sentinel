@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 from mq_sentinel.connectors.base import MQConnector
 from mq_sentinel.inventory.registry import InventoryRegistry
+from mq_sentinel.rcs.engine import RCSFinding
 from mq_sentinel.rcs.kc_registry import KCRegistry
 from mq_sentinel.rcs.matchers.channels import match_channel_failures
 from mq_sentinel.secrets.backend import SecretsBackend
@@ -15,6 +17,35 @@ from mq_sentinel.topology.detect import TopologyFingerprint
 TOOL_NAME = "diagnose_failed_channels"
 
 _LOG_TAIL_LIMIT = 200  # lines
+
+
+@dataclass(frozen=True, slots=True)
+class ChannelCheckResult:
+    findings: tuple[RCSFinding, ...]
+    raw_evidence: dict[str, Any]
+
+
+def run_channel_checks(
+    connector: MQConnector,
+    fingerprint: TopologyFingerprint,
+    registry: KCRegistry,
+) -> ChannelCheckResult:
+    """Internal helper: run all channel checks against an existing connector.
+
+    Used by the standalone tool below AND by full_mq_health_check so the
+    composite tool can run on a single connection.
+    """
+    channels = _collect_channel_status(connector)
+    log_tail = _read_error_log_tail(connector)
+    raw = {"channels": channels, "error_log_tail": log_tail}
+    findings = match_channel_failures(raw, registry, mq_version=fingerprint.mq_version)
+    return ChannelCheckResult(
+        findings=tuple(findings),
+        raw_evidence={
+            "channels_examined": len(channels),
+            "log_tail_lines": len(log_tail.splitlines()),
+        },
+    )
 
 
 def diagnose_failed_channels(
@@ -39,21 +70,13 @@ def diagnose_failed_channels(
         inventory=inventory,
         secrets=secrets,
     ) as (connector, _entry, fingerprint):
-        channels = _collect_channel_status(connector)
-        log_tail = _read_error_log_tail(connector)
-
-        raw = {"channels": channels, "error_log_tail": log_tail}
-        findings = match_channel_failures(raw, registry, mq_version=fingerprint.mq_version)
-
+        result = run_channel_checks(connector, fingerprint, registry)
         return ToolResponse(
             tool=TOOL_NAME,
             qm_name=qm_name,
             topology=fingerprint,
-            findings=tuple(findings),
-            raw_evidence={
-                "channels_examined": len(channels),
-                "log_tail_lines": len(log_tail.splitlines()),
-            },
+            findings=result.findings,
+            raw_evidence=result.raw_evidence,
         ).to_dict()
 
 
@@ -75,10 +98,5 @@ def _read_error_log_tail(connector: MQConnector) -> str:
         result = connector.execute_mqsc("DISPLAY QMSTATUS")
     except Exception:  # noqa: BLE001
         return ""
-    # Concatenate raw rows; matchers extract AMQ codes from this.
     lines = (result.raw or "").splitlines()[-_LOG_TAIL_LIMIT:]
     return "\n".join(lines)
-
-
-def _topology_passthrough(t: TopologyFingerprint) -> TopologyFingerprint:
-    return t  # placeholder for Phase 2 topology-specific channel rules

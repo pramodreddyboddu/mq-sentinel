@@ -31,6 +31,8 @@ from mq_sentinel.tools.cluster import TOOL_NAME as CLUSTER_TOOL_NAME
 from mq_sentinel.tools.cluster import check_cluster_health
 from mq_sentinel.tools.dlq import TOOL_NAME as DLQ_TOOL_NAME
 from mq_sentinel.tools.dlq import analyze_dlq
+from mq_sentinel.tools.health_check import TOOL_NAME as HEALTH_CHECK_TOOL_NAME
+from mq_sentinel.tools.health_check import full_mq_health_check
 
 
 def _hash_params(params: dict[str, Any]) -> str:
@@ -144,6 +146,27 @@ class MQSentinelServer:
             secrets=self._secrets,
         )
 
+    def full_health_check(
+        self,
+        qm_name: str,
+        principal: Principal,
+        dlq_sample_size: int = 50,
+    ) -> dict[str, Any]:
+        try:
+            entry = self._inventory.get(qm_name)
+        except LookupError:
+            authorize(principal, Action.READ_NONPROD)
+            raise
+        action = Action.READ_PROD if entry.environment == "prod" else Action.READ_NONPROD
+        authorize(principal, action)
+        return full_mq_health_check(
+            qm_name=qm_name,
+            connector_factory=self._connector_factory,
+            inventory=self._inventory,
+            secrets=self._secrets,
+            dlq_sample_size=dlq_sample_size,
+        )
+
     # --- dispatch ---------------------------------------------------------
 
     def dispatch(
@@ -181,6 +204,13 @@ class MQSentinelServer:
                 if not isinstance(target_qm, str):
                     raise ValueError("qm_name (str) parameter required")
                 result = self.check_cluster_health(target_qm, principal)
+            elif tool == HEALTH_CHECK_TOOL_NAME:
+                if not isinstance(target_qm, str):
+                    raise ValueError("qm_name (str) parameter required")
+                sample = params.get("dlq_sample_size", 50)
+                if not isinstance(sample, int):
+                    raise ValueError("dlq_sample_size must be an int")
+                result = self.full_health_check(target_qm, principal, dlq_sample_size=sample)
             else:
                 raise LookupError(f"unknown tool: {tool}")
 
@@ -276,6 +306,22 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
             token=dev_token,
             tool=CLUSTER_TOOL_NAME,
             params={"qm_name": qm_name},
+        )
+
+    @mcp.tool(
+        description=(
+            "Run the full MQ-Sentinel health check on a Queue Manager: "
+            "channels + DLQ headers + cluster topology, with auto-detected "
+            "topology, executive summary (overall status, severity counts, "
+            "top issues), and a unified RCS findings list ranked by severity. "
+            "READ-ONLY."
+        ),
+    )
+    def full_mq_health_check(qm_name: str, dlq_sample_size: int = 50) -> dict[str, Any]:
+        return srv.dispatch(
+            token=dev_token,
+            tool=HEALTH_CHECK_TOOL_NAME,
+            params={"qm_name": qm_name, "dlq_sample_size": dlq_sample_size},
         )
 
     mcp.run()

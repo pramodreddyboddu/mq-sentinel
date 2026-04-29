@@ -1,7 +1,14 @@
 """MCP tool implementations.
 
-Phase 1:
-- diagnose_failed_channels — channel health + RCS findings.
+Phase 1 (complete):
+- diagnose_failed_channels                — channel health + RCS findings.
+- analyze_dlq_and_suggest_reprocessing    — DLQ headers (no bodies).
+- check_cluster_health                    — cluster topology + repos.
+- diagnose_native_ha_issues               — replica state + CRR lag.
+- diagnose_rdqm_issues                    — Pacemaker + DRBD + split-brain.
+- diagnose_zos_qsg_issues                 — QSG + CHIN + PSID + BUFFPOOL + CF.
+- diagnose_multi_instance_issues          — active/standby + dual-active.
+- full_mq_health_check                    — composite + executive summary.
 """
 
 from mq_sentinel.tools.channels import TOOL_NAME as CHANNELS_TOOL_NAME

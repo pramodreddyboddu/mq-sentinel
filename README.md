@@ -3,7 +3,13 @@
 **Read-only, enterprise-grade IBM MQ diagnostic MCP server.**
 Root cause + recommended fix steps + IBM Knowledge Center citations — for every IBM MQ deployment flavor, with zero hallucinations.
 
-> Status: **Alpha (Commit 1 — enterprise foundation)**. Diagnostic tools land in Phase 1 per the v1.0 spec.
+[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
+[![mypy strict](https://img.shields.io/badge/mypy-strict-success.svg)](https://mypy.readthedocs.io/)
+[![ruff](https://img.shields.io/badge/lint-ruff-orange.svg)](https://docs.astral.sh/ruff/)
+[![tests 167 passing](https://img.shields.io/badge/tests-167%20passing-success.svg)]()
+[![License Proprietary](https://img.shields.io/badge/license-proprietary-red.svg)](LICENSE)
+
+> Status: **0.1.0 — Phase 1 complete.** Eight diagnostic tools across all ten IBM MQ flavors. stdio + HTTPS+OIDC transports. See [CHANGELOG](CHANGELOG.md).
 
 ---
 
@@ -30,9 +36,22 @@ The MCP itself never calls an LLM and never invents a fix — it pattern-matches
 
 See [SECURITY.md](SECURITY.md) and [docs/threat-model.md](docs/threat-model.md).
 
-## Supported IBM MQ flavors (Phase 1)
+## Supported IBM MQ flavors (Phase 1 complete)
 
 Standalone · Multi-Instance QM · RDQM · Native HA · Native HA + CRR · Uniform Cluster · Traditional Cluster · z/OS Queue Sharing Group · MQ Appliance · Containerized.
+
+## Diagnostic tools
+
+| Tool | Covers | Demo finding |
+|---|---|---|
+| `diagnose_failed_channels` | Distributed channels | 2035 NOT_AUTHORIZED, 2009/2059 connection errors, INDOUBT, AMQ9202/9208/9503 |
+| `analyze_dlq_and_suggest_reprocessing` | DLQ (headers only — never bodies) | Grouped by reason 2035/2080/2030/2051/2053/2079, backout-loop detection |
+| `check_cluster_health` | Traditional + uniform cluster | Partial repository, stale CLUSQMGR, suspended members, unhealthy cluster channels |
+| `diagnose_native_ha_issues` | K8s/OpenShift Native HA | Replica state, quorum, log replay lag, split-brain, CRR lag |
+| `diagnose_rdqm_issues` | On-prem RHEL RDQM | Pacemaker quorum, offline nodes, DRBD connection/disk, split-brain |
+| `diagnose_zos_qsg_issues` | z/OS Queue Sharing Group | QSG members, CHIN, page sets, buffer pools, CF structures |
+| `diagnose_multi_instance_issues` | Traditional MIQM | Active/standby state, dual-active split, standby permission, failover events |
+| `full_mq_health_check` | All of the above (composite) | Executive summary + ranked findings |
 
 ## Supported MQ versions
 
@@ -85,10 +104,12 @@ tests/
 
 ## Roadmap
 
-- **Phase 1** — topology auto-detect + core tools (QM/Channel/Queue/DLQ/Cluster/HA/z/OS).
-- **Phase 2** — Native HA + CRR depth, Appliance specifics.
-- **Phase 3** — composite `full_mq_health_check(topology=auto)` + demo sandbox with injected faults.
-- **Phase 4+** — historical trends, SOC2 evidence pack, air-gapped KC snapshot.
+Phase 1 is complete (eight diagnostic tools, two transports, all ten flavors). See [CHANGELOG.md](CHANGELOG.md) for what's next:
+
+- **0.2.0** — Air-gapped KC doc bundle; FIPS-140 build flag.
+- **0.3.0** — Historical telemetry store for trend + anomaly detection.
+- **0.4.0** — ServiceNow / Jira ticket auto-draft from RCS findings.
+- **0.5.0** — SOC 2 evidence-pack generator.
 
 Safe remediation is intentionally **out of scope**. MQ-Sentinel only reports.
 

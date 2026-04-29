@@ -1,0 +1,17 @@
+Cluster Summary:
+  * Stack: corosync
+  * Current DC: rdqm-1 (version 2.1.5)
+  * Last updated: 2026-04-28 09:15:42 -05:00
+  * 3 nodes configured
+  * 8 resource instances configured
+
+Online: [ rdqm-1 rdqm-2 ]
+OFFLINE: [ rdqm-3 ]
+
+Active Resources:
+  * Resource Group: DEMO_QM-group:
+    * DEMO_QM-vip	(ocf:heartbeat:IPaddr2):	Started rdqm-1
+    * DEMO_QM-fs	(ocf:heartbeat:Filesystem):	Started rdqm-1
+
+Failed Resource Actions:
+  * DEMO_QM-monitor on rdqm-3: FAILED unknown error (last failure)

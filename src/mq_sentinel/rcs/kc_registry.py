@@ -185,6 +185,34 @@ class KCRegistry:
                     mq_versions=("9.4",),
                 ),
             ],
+            "rdqm_overview": [
+                KCDocRef(
+                    title="RDQM high availability",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=availability-rdqm-high",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "rdqm_troubleshooting": [
+                KCDocRef(
+                    title="Troubleshooting RDQM",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=rdqm-troubleshooting",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "rdqm_split_brain": [
+                KCDocRef(
+                    title="Resolving DRBD split-brain on RDQM",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=rdqm-resolving-drbd-split-brain",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "rdqm_pacemaker": [
+                KCDocRef(
+                    title="Pacemaker on RDQM",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=rdqm-pacemaker",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
         }
 
     def lookup_reason(self, reason: int, mq_version: str | None = None) -> list[KCDocRef]:

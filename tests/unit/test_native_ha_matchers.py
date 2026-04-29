@@ -43,9 +43,7 @@ def test_quorum_lost_critical() -> None:
 def test_no_active_instance_critical() -> None:
     raw = {"instances": [_i("a", role="REPLICA"), _i("b", role="REPLICA")]}
     findings = match_native_ha_findings(raw, KCRegistry())
-    assert any(
-        "no ACTIVE instance" in f.issue and f.severity.value == "CRITICAL" for f in findings
-    )
+    assert any("no ACTIVE instance" in f.issue and f.severity.value == "CRITICAL" for f in findings)
 
 
 def test_split_brain_critical() -> None:
@@ -121,8 +119,19 @@ def test_fix_steps_are_read_only() -> None:
     for f in match_native_ha_findings(raw, KCRegistry()):
         for step in f.fix_steps:
             for verb in (
-                "ALTER ", "DELETE ", "DEFINE ", "REFRESH ", "RESET ",
-                "CLEAR ", "SET ", "MOVE ", "START ", "STOP ", "RESUME ",
-                "SUSPEND ", "RECOVER ", "FAILOVER ",
+                "ALTER ",
+                "DELETE ",
+                "DEFINE ",
+                "REFRESH ",
+                "RESET ",
+                "CLEAR ",
+                "SET ",
+                "MOVE ",
+                "START ",
+                "STOP ",
+                "RESUME ",
+                "SUSPEND ",
+                "RECOVER ",
+                "FAILOVER ",
             ):
                 assert verb not in step.upper(), f"destructive verb in: {step}"

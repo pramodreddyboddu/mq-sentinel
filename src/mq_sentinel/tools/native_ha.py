@@ -48,12 +48,8 @@ def run_native_ha_checks(
         findings=tuple(findings),
         raw_evidence={
             "instance_count": len(instances),
-            "in_sync_count": sum(
-                1 for i in instances if str(i.get("INSYNC", "")).upper() == "YES"
-            ),
-            "active_count": sum(
-                1 for i in instances if str(i.get("ROLE", "")).upper() == "ACTIVE"
-            ),
+            "in_sync_count": sum(1 for i in instances if str(i.get("INSYNC", "")).upper() == "YES"),
+            "active_count": sum(1 for i in instances if str(i.get("ROLE", "")).upper() == "ACTIVE"),
             "crr_enabled": bool(crr and crr.get("enabled")),
             "crr_lag_seconds": int((crr or {}).get("lag_seconds") or 0),
         },

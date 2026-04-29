@@ -1,0 +1,8 @@
+DEMO_QM role:Primary disk:UpToDate
+  rdqm-2 connection:Connected
+    role:Secondary peer-disk:UpToDate
+  rdqm-3 connection:WFConnection
+    role:Unknown peer-disk:DUnknown
+DEMO_QM_LOGS role:Primary disk:Inconsistent
+  rdqm-2 connection:SyncTarget
+    role:Secondary peer-disk:UpToDate

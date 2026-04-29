@@ -1,0 +1,13 @@
+Queue manager name:                             DEMO_QM
+Queue manager status:                           Running
+HA current status:                              Online
+HA configuration consistent:                    Yes
+HA managed:                                     Yes
+Running on:                                     rdqm-1
+Preferred location:                             rdqm-1
+Floating IP address:                            10.0.0.50
+HA control:                                     Enabled
+
+  Node:                                         rdqm-1                 HA replica:    Normal
+  Node:                                         rdqm-2                 HA replica:    Normal
+  Node:                                         rdqm-3                 HA replica:    Disconnected

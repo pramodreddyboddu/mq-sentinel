@@ -4,6 +4,7 @@ from mq_sentinel.rcs.matchers.channels import match_channel_failures
 from mq_sentinel.rcs.matchers.cluster import match_cluster_findings
 from mq_sentinel.rcs.matchers.dlq import header_to_dict, match_dlq_findings
 from mq_sentinel.rcs.matchers.native_ha import match_native_ha_findings
+from mq_sentinel.rcs.matchers.rdqm import match_rdqm_findings
 
 __all__ = [
     "header_to_dict",
@@ -11,4 +12,5 @@ __all__ = [
     "match_cluster_findings",
     "match_dlq_findings",
     "match_native_ha_findings",
+    "match_rdqm_findings",
 ]

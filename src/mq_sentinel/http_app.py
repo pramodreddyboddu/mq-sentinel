@@ -62,6 +62,10 @@ _TOOLS_PUBLIC_LIST = [
         "name": "diagnose_native_ha_issues",
         "description": "Native HA replica state, quorum, log replay lag, CRR.",
     },
+    {
+        "name": "diagnose_rdqm_issues",
+        "description": "RDQM Pacemaker, DRBD replication, split-brain detection.",
+    },
 ]
 
 

@@ -98,11 +98,17 @@ def test_wrong_audience_rejected(keypair: tuple[dict[str, Any], dict[str, Any]])
 def test_bad_signature_rejected(keypair: tuple[dict[str, Any], dict[str, Any]]) -> None:
     priv, pub = keypair
     token = _sign(priv, _claims())
-    # Mutate one byte of the signature segment.
+    # Replace ~16 chars in the middle of the signature with a fixed pattern —
+    # guarantees the decoded signature bytes change (a single base64 char flip
+    # can hit a same-byte alphabet collision).
     head, payload, sig = token.split(".")
-    flipped = sig[:-1] + ("A" if sig[-1] != "A" else "B")
+    if len(sig) < 32:
+        pytest.skip("signature too short to mutate")
+    mid = len(sig) // 2
+    tampered = sig[: mid - 8] + ("A" * 16) + sig[mid + 8 :]
+    assert tampered != sig
     with pytest.raises(TokenVerificationError):
-        _verifier(pub).verify(f"{head}.{payload}.{flipped}")
+        _verifier(pub).verify(f"{head}.{payload}.{tampered}")
 
 
 def test_unknown_kid_rejected(keypair: tuple[dict[str, Any], dict[str, Any]]) -> None:

@@ -40,6 +40,8 @@ from mq_sentinel.tools.health_check import TOOL_NAME as HEALTH_CHECK_TOOL_NAME
 from mq_sentinel.tools.health_check import full_mq_health_check
 from mq_sentinel.tools.native_ha import TOOL_NAME as NATIVE_HA_TOOL_NAME
 from mq_sentinel.tools.native_ha import diagnose_native_ha_issues
+from mq_sentinel.tools.rdqm import TOOL_NAME as RDQM_TOOL_NAME
+from mq_sentinel.tools.rdqm import diagnose_rdqm_issues
 
 
 def _hash_params(params: dict[str, Any]) -> str:
@@ -214,6 +216,21 @@ class MQSentinelServer:
             secrets=self._secrets,
         )
 
+    def diagnose_rdqm(self, qm_name: str, principal: Principal) -> dict[str, Any]:
+        try:
+            entry = self._inventory.get(qm_name)
+        except LookupError:
+            authorize(principal, Action.READ_NONPROD)
+            raise
+        action = Action.READ_PROD if entry.environment == "prod" else Action.READ_NONPROD
+        authorize(principal, action)
+        return diagnose_rdqm_issues(
+            qm_name=qm_name,
+            connector_factory=self._connector_factory,
+            inventory=self._inventory,
+            secrets=self._secrets,
+        )
+
     # --- dispatch ---------------------------------------------------------
 
     def dispatch(
@@ -262,6 +279,10 @@ class MQSentinelServer:
                 if not isinstance(target_qm, str):
                     raise ValueError("qm_name (str) parameter required")
                 result = self.diagnose_native_ha(target_qm, principal)
+            elif tool == RDQM_TOOL_NAME:
+                if not isinstance(target_qm, str):
+                    raise ValueError("qm_name (str) parameter required")
+                result = self.diagnose_rdqm(target_qm, principal)
             else:
                 raise LookupError(f"unknown tool: {tool}")
 
@@ -386,6 +407,21 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
         return srv.dispatch(
             token=dev_token,
             tool=NATIVE_HA_TOOL_NAME,
+            params={"qm_name": qm_name},
+        )
+
+    @mcp.tool(
+        description=(
+            "Diagnose RDQM (Replicated Data Queue Manager): Pacemaker quorum, "
+            "offline nodes, failed resources, and DRBD replication state "
+            "(connection, disk states, split-brain). Returns RCS findings "
+            "with IBM KC references. READ-ONLY."
+        ),
+    )
+    def diagnose_rdqm_issues(qm_name: str) -> dict[str, Any]:
+        return srv.dispatch(
+            token=dev_token,
+            tool=RDQM_TOOL_NAME,
             params={"qm_name": qm_name},
         )
 

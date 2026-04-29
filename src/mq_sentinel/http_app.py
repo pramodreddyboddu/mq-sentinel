@@ -58,6 +58,10 @@ _TOOLS_PUBLIC_LIST = [
         "name": "full_mq_health_check",
         "description": "Composite: channels + DLQ + cluster, ranked by severity.",
     },
+    {
+        "name": "diagnose_native_ha_issues",
+        "description": "Native HA replica state, quorum, log replay lag, CRR.",
+    },
 ]
 
 

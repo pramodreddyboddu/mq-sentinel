@@ -12,14 +12,18 @@ from mq_sentinel.tools.dlq import TOOL_NAME as DLQ_TOOL_NAME
 from mq_sentinel.tools.dlq import analyze_dlq
 from mq_sentinel.tools.health_check import TOOL_NAME as HEALTH_CHECK_TOOL_NAME
 from mq_sentinel.tools.health_check import full_mq_health_check
+from mq_sentinel.tools.native_ha import TOOL_NAME as NATIVE_HA_TOOL_NAME
+from mq_sentinel.tools.native_ha import diagnose_native_ha_issues
 
 __all__ = [
     "CHANNELS_TOOL_NAME",
     "CLUSTER_TOOL_NAME",
     "DLQ_TOOL_NAME",
     "HEALTH_CHECK_TOOL_NAME",
+    "NATIVE_HA_TOOL_NAME",
     "analyze_dlq",
     "check_cluster_health",
     "diagnose_failed_channels",
+    "diagnose_native_ha_issues",
     "full_mq_health_check",
 ]

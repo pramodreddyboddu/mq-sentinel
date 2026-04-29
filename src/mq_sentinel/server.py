@@ -38,6 +38,8 @@ from mq_sentinel.tools.dlq import TOOL_NAME as DLQ_TOOL_NAME
 from mq_sentinel.tools.dlq import analyze_dlq
 from mq_sentinel.tools.health_check import TOOL_NAME as HEALTH_CHECK_TOOL_NAME
 from mq_sentinel.tools.health_check import full_mq_health_check
+from mq_sentinel.tools.native_ha import TOOL_NAME as NATIVE_HA_TOOL_NAME
+from mq_sentinel.tools.native_ha import diagnose_native_ha_issues
 
 
 def _hash_params(params: dict[str, Any]) -> str:
@@ -197,6 +199,21 @@ class MQSentinelServer:
             dlq_sample_size=dlq_sample_size,
         )
 
+    def diagnose_native_ha(self, qm_name: str, principal: Principal) -> dict[str, Any]:
+        try:
+            entry = self._inventory.get(qm_name)
+        except LookupError:
+            authorize(principal, Action.READ_NONPROD)
+            raise
+        action = Action.READ_PROD if entry.environment == "prod" else Action.READ_NONPROD
+        authorize(principal, action)
+        return diagnose_native_ha_issues(
+            qm_name=qm_name,
+            connector_factory=self._connector_factory,
+            inventory=self._inventory,
+            secrets=self._secrets,
+        )
+
     # --- dispatch ---------------------------------------------------------
 
     def dispatch(
@@ -241,6 +258,10 @@ class MQSentinelServer:
                 if not isinstance(sample, int):
                     raise ValueError("dlq_sample_size must be an int")
                 result = self.full_health_check(target_qm, principal, dlq_sample_size=sample)
+            elif tool == NATIVE_HA_TOOL_NAME:
+                if not isinstance(target_qm, str):
+                    raise ValueError("qm_name (str) parameter required")
+                result = self.diagnose_native_ha(target_qm, principal)
             else:
                 raise LookupError(f"unknown tool: {tool}")
 
@@ -352,6 +373,20 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
             token=dev_token,
             tool=HEALTH_CHECK_TOOL_NAME,
             params={"qm_name": qm_name, "dlq_sample_size": dlq_sample_size},
+        )
+
+    @mcp.tool(
+        description=(
+            "Diagnose Native HA: replica state, quorum, log replay lag, "
+            "split-brain detection, and Cross-Region Replication lag. "
+            "Returns RCS findings with IBM KC references. READ-ONLY."
+        ),
+    )
+    def diagnose_native_ha_issues(qm_name: str) -> dict[str, Any]:
+        return srv.dispatch(
+            token=dev_token,
+            tool=NATIVE_HA_TOOL_NAME,
+            params={"qm_name": qm_name},
         )
 
     mcp.run()

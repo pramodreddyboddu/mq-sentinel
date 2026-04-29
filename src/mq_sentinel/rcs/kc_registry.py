@@ -127,6 +127,13 @@ class KCRegistry:
                     mq_versions=("9.2", "9.3", "9.4"),
                 ),
             ],
+            "AMQ3209": [
+                KCDocRef(
+                    title="AMQ3209I: Native HA replica is not in sync",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=messages-amq3209i",
+                    mq_versions=("9.3", "9.4"),
+                ),
+            ],
         }
         self._topics: dict[str, list[KCDocRef]] = {
             "cluster_partial_repository": [
@@ -148,6 +155,34 @@ class KCRegistry:
                     title="Troubleshooting cluster problems",
                     url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=clusters-troubleshooting",
                     mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "native_ha_overview": [
+                KCDocRef(
+                    title="Native HA",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=ha-native",
+                    mq_versions=("9.3", "9.4"),
+                ),
+            ],
+            "native_ha_quorum_lost": [
+                KCDocRef(
+                    title="Troubleshooting Native HA",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=ha-troubleshooting-native",
+                    mq_versions=("9.3", "9.4"),
+                ),
+            ],
+            "native_ha_log_replication": [
+                KCDocRef(
+                    title="Native HA log replication",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=native-ha-log-replication",
+                    mq_versions=("9.3", "9.4"),
+                ),
+            ],
+            "native_ha_crr": [
+                KCDocRef(
+                    title="Cross-region replication for Native HA",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=ha-cross-region-replication",
+                    mq_versions=("9.4",),
                 ),
             ],
         }

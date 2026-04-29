@@ -1,0 +1,30 @@
+{
+  "rows": [
+    {
+      "INSTANCE": "DEMO_QM-0",
+      "ROLE": "ACTIVE",
+      "STATUS": "RUNNING",
+      "INSYNC": "YES",
+      "BACKLOG": "0",
+      "REPLAYPCT": "100"
+    },
+    {
+      "INSTANCE": "DEMO_QM-1",
+      "ROLE": "REPLICA",
+      "STATUS": "RUNNING",
+      "INSYNC": "YES",
+      "BACKLOG": "1024",
+      "REPLAYPCT": "92"
+    },
+    {
+      "INSTANCE": "DEMO_QM-2",
+      "ROLE": "REPLICA",
+      "STATUS": "DISCONNECTED",
+      "INSYNC": "NO",
+      "BACKLOG": "52428800",
+      "REPLAYPCT": "60"
+    }
+  ],
+  "raw": "INSTANCE(DEMO_QM-0) ROLE(ACTIVE) STATUS(RUNNING) INSYNC(YES) REPLAYPCT(100)\nINSTANCE(DEMO_QM-1) ROLE(REPLICA) STATUS(RUNNING) INSYNC(YES) REPLAYPCT(92)\nINSTANCE(DEMO_QM-2) ROLE(REPLICA) STATUS(DISCONNECTED) INSYNC(NO) REPLAYPCT(60)",
+  "completion_code": 0
+}

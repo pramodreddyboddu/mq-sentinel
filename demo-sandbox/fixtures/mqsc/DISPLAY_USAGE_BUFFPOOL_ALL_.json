@@ -1,0 +1,8 @@
+{
+  "rows": [
+    {"BUFFPOOL": "0", "FREEPCT": "45"},
+    {"BUFFPOOL": "1", "FREEPCT": "5"}
+  ],
+  "raw": "BUFFPOOL(0) FREEPCT(45)\nBUFFPOOL(1) FREEPCT(5)",
+  "completion_code": 0
+}

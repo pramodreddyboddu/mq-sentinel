@@ -66,6 +66,14 @@ _TOOLS_PUBLIC_LIST = [
         "name": "diagnose_rdqm_issues",
         "description": "RDQM Pacemaker, DRBD replication, split-brain detection.",
     },
+    {
+        "name": "diagnose_zos_qsg_issues",
+        "description": "z/OS QSG members, CHIN, page sets, buffer pools, CF structures.",
+    },
+    {
+        "name": "diagnose_multi_instance_issues",
+        "description": "MIQM active/standby state, dual-active detection, failover events.",
+    },
 ]
 
 

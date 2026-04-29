@@ -1,0 +1,9 @@
+{
+  "rows": [
+    {"PSID": "0", "USEPCT": "55"},
+    {"PSID": "1", "USEPCT": "82"},
+    {"PSID": "2", "USEPCT": "97"}
+  ],
+  "raw": "PSID(0) USEPCT(55)\nPSID(1) USEPCT(82)\nPSID(2) USEPCT(97)",
+  "completion_code": 0
+}

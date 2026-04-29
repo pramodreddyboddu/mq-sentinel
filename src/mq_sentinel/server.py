@@ -38,10 +38,14 @@ from mq_sentinel.tools.dlq import TOOL_NAME as DLQ_TOOL_NAME
 from mq_sentinel.tools.dlq import analyze_dlq
 from mq_sentinel.tools.health_check import TOOL_NAME as HEALTH_CHECK_TOOL_NAME
 from mq_sentinel.tools.health_check import full_mq_health_check
+from mq_sentinel.tools.miqm import TOOL_NAME as MIQM_TOOL_NAME
+from mq_sentinel.tools.miqm import diagnose_multi_instance_issues
 from mq_sentinel.tools.native_ha import TOOL_NAME as NATIVE_HA_TOOL_NAME
 from mq_sentinel.tools.native_ha import diagnose_native_ha_issues
 from mq_sentinel.tools.rdqm import TOOL_NAME as RDQM_TOOL_NAME
 from mq_sentinel.tools.rdqm import diagnose_rdqm_issues
+from mq_sentinel.tools.zos import TOOL_NAME as ZOS_TOOL_NAME
+from mq_sentinel.tools.zos import diagnose_zos_qsg_issues
 
 
 def _hash_params(params: dict[str, Any]) -> str:
@@ -231,6 +235,36 @@ class MQSentinelServer:
             secrets=self._secrets,
         )
 
+    def diagnose_zos(self, qm_name: str, principal: Principal) -> dict[str, Any]:
+        try:
+            entry = self._inventory.get(qm_name)
+        except LookupError:
+            authorize(principal, Action.READ_NONPROD)
+            raise
+        action = Action.READ_PROD if entry.environment == "prod" else Action.READ_NONPROD
+        authorize(principal, action)
+        return diagnose_zos_qsg_issues(
+            qm_name=qm_name,
+            connector_factory=self._connector_factory,
+            inventory=self._inventory,
+            secrets=self._secrets,
+        )
+
+    def diagnose_miqm(self, qm_name: str, principal: Principal) -> dict[str, Any]:
+        try:
+            entry = self._inventory.get(qm_name)
+        except LookupError:
+            authorize(principal, Action.READ_NONPROD)
+            raise
+        action = Action.READ_PROD if entry.environment == "prod" else Action.READ_NONPROD
+        authorize(principal, action)
+        return diagnose_multi_instance_issues(
+            qm_name=qm_name,
+            connector_factory=self._connector_factory,
+            inventory=self._inventory,
+            secrets=self._secrets,
+        )
+
     # --- dispatch ---------------------------------------------------------
 
     def dispatch(
@@ -283,6 +317,14 @@ class MQSentinelServer:
                 if not isinstance(target_qm, str):
                     raise ValueError("qm_name (str) parameter required")
                 result = self.diagnose_rdqm(target_qm, principal)
+            elif tool == ZOS_TOOL_NAME:
+                if not isinstance(target_qm, str):
+                    raise ValueError("qm_name (str) parameter required")
+                result = self.diagnose_zos(target_qm, principal)
+            elif tool == MIQM_TOOL_NAME:
+                if not isinstance(target_qm, str):
+                    raise ValueError("qm_name (str) parameter required")
+                result = self.diagnose_miqm(target_qm, principal)
             else:
                 raise LookupError(f"unknown tool: {tool}")
 
@@ -422,6 +464,36 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
         return srv.dispatch(
             token=dev_token,
             tool=RDQM_TOOL_NAME,
+            params={"qm_name": qm_name},
+        )
+
+    @mcp.tool(
+        description=(
+            "Diagnose z/OS Queue Sharing Group: QSG members, channel "
+            "initiator (CHIN), page set utilization, buffer pool free "
+            "pages, and coupling facility structure status. Returns RCS "
+            "findings with IBM KC references. READ-ONLY."
+        ),
+    )
+    def diagnose_zos_qsg_issues(qm_name: str) -> dict[str, Any]:
+        return srv.dispatch(
+            token=dev_token,
+            tool=ZOS_TOOL_NAME,
+            params={"qm_name": qm_name},
+        )
+
+    @mcp.tool(
+        description=(
+            "Diagnose Multi-Instance Queue Manager (MIQM): active/standby "
+            "state, dual-active split detection, standby permission, "
+            "and recent failover events. Returns RCS findings with IBM "
+            "KC references. READ-ONLY."
+        ),
+    )
+    def diagnose_multi_instance_issues(qm_name: str) -> dict[str, Any]:
+        return srv.dispatch(
+            token=dev_token,
+            tool=MIQM_TOOL_NAME,
             params={"qm_name": qm_name},
         )
 

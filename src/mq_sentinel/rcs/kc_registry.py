@@ -213,6 +213,55 @@ class KCRegistry:
                     mq_versions=("9.2", "9.3", "9.4"),
                 ),
             ],
+            "zos_qsg_overview": [
+                KCDocRef(
+                    title="Queue sharing groups (z/OS)",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=zos-queue-sharing-groups",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "zos_chin": [
+                KCDocRef(
+                    title="The channel initiator on z/OS",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=zos-channel-initiator",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "zos_pageset": [
+                KCDocRef(
+                    title="Managing page sets on z/OS",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=zos-managing-page-sets",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "zos_bufferpool": [
+                KCDocRef(
+                    title="Buffer pools on z/OS",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=zos-buffer-pools",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "zos_cf_structure": [
+                KCDocRef(
+                    title="Coupling facility structures (z/OS)",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=zos-coupling-facility-structures",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "miqm_overview": [
+                KCDocRef(
+                    title="Multi-instance queue managers",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=availability-multi-instance-queue-managers",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            "miqm_troubleshooting": [
+                KCDocRef(
+                    title="Troubleshooting multi-instance queue managers",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=availability-troubleshooting-multi-instance",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
         }
 
     def lookup_reason(self, reason: int, mq_version: str | None = None) -> list[KCDocRef]:

@@ -1,0 +1,2 @@
+QMNAME(DEMO_QM)                                           STATUS(Running) MODE(Active)        INSTANCE(host1)
+QMNAME(DEMO_QM)                                           STATUS(Running) MODE(Active)        INSTANCE(host2)

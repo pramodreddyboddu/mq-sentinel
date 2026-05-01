@@ -1,0 +1,41 @@
+[Unit]
+Description=MQ-Sentinel — read-only IBM MQ diagnostic MCP server
+Documentation=https://github.com/pramodreddyboddu/mq-sentinel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mq-sentinel
+Group=mq-sentinel
+EnvironmentFile=/etc/mq-sentinel/mq-sentinel.env
+ExecStart=/opt/mq-sentinel/bin/mq-sentinel serve --transport http
+Restart=on-failure
+RestartSec=5
+
+# Hardening — read-only filesystem except for the audit dir
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+NoNewPrivileges=true
+ReadWritePaths=/var/log/mq-sentinel
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# Resource limits
+LimitNOFILE=4096
+MemoryMax=512M
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target

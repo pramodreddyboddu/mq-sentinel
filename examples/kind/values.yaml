@@ -1,0 +1,30 @@
+# Helm values override for the Kind demo. Real deployments would point
+# `oidc.*` at their actual IdP and `image.repository` at their registry.
+image:
+  repository: mq-sentinel
+  tag: dev
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+env:
+  MQS_SERVER_ENVIRONMENT: prod
+  MQS_SERVER_TRANSPORT: http
+  MQS_SERVER_HTTP_HOST: "0.0.0.0"
+  MQS_SERVER_HTTP_PORT: "8080"
+  MQS_AUDIT_LOG_PATH: /var/audit/audit.jsonl
+  MQS_SECURITY_RATE_LIMIT_PER_MINUTE: "60"
+
+# Wired by install.sh after generating the local JWKS server.
+oidc:
+  issuer: "http://jwks.demo.svc.cluster.local"
+  audience: "mq-sentinel"
+  jwksUrl: "http://jwks.demo.svc.cluster.local/jwks.json"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 96Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi

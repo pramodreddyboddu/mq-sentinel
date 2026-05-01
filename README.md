@@ -57,14 +57,28 @@ Standalone · Multi-Instance QM · RDQM · Native HA · Native HA + CRR · Unifo
 
 **9.2 LTS, 9.3, 9.4 (incl. 9.4.4+), z/OS.** Version is auto-detected at connect time; KC doc links are keyed to the detected version.
 
-## Quick start (dev)
+## Install — pick your path
+
+| Scenario | Command | Time |
+|---|---|---|
+| **Solo / startup laptop (dev)** | `curl -fsSL https://raw.githubusercontent.com/pramodreddyboddu/mq-sentinel/main/scripts/install.sh \| MQS_DEV_MODE=true MQS_DEV_MODE_ACK_INSECURE=yes bash` | 5 min |
+| **Solo / startup (prod)** | Same, with `MQS_AUTH_OIDC_*` env vars exported | 5 min |
+| **Mid-org Kubernetes** | `helm install mq-sentinel oci://ghcr.io/pramodreddyboddu/charts/mq-sentinel --set oidc.issuer=… --set oidc.audience=… --set oidc.jwksUrl=…` | 30 min |
+| **Local K8s POC (no live MQ)** | `cd examples/kind && ./install.sh` | 5 min |
+| **RHEL / Rocky / OEL** | `sudo dnf install https://github.com/pramodreddyboddu/mq-sentinel/releases/latest/download/mq-sentinel-0.1.0-1.x86_64.rpm` | 5 min |
+| **Debian / Ubuntu** | `sudo apt install ./mq-sentinel_0.1.0_amd64.deb` | 5 min |
+| **Air-gapped (banks/gov)** | Mirror RPM internally, sign with org GPG, deploy via Satellite / Aptly | 1 evening |
+
+Full guide: [docs/INSTALL.md](docs/INSTALL.md). For IBM MQ client libs: [docs/byom.md](docs/byom.md).
+
+## Quick start (developer / contributor)
 
 ```bash
-uv sync --all-extras --dev
-uv run mq-sentinel version
-uv run mq-sentinel health
-uv run pytest -q
-uv run pytest -q -m security   # security-only suite must stay green
+make install        # uv sync + editable install
+make test           # pytest
+make ci             # lint + type + tests + security suite (everything CI runs)
+make docker         # build the production container image
+make rpm deb        # build RPM + DEB packages (requires `gem install fpm`)
 ```
 
 ## Transports

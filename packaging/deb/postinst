@@ -1,0 +1,44 @@
+#!/bin/sh
+# Debian postinst — invoked by fpm-built .deb after files are unpacked.
+set -e
+
+if [ "$1" = "configure" ]; then
+    # Service account
+    if ! getent group mq-sentinel >/dev/null; then
+        addgroup --system mq-sentinel
+    fi
+    if ! getent passwd mq-sentinel >/dev/null; then
+        adduser --system --ingroup mq-sentinel --home /opt/mq-sentinel \
+                --shell /usr/sbin/nologin --no-create-home \
+                --gecos "MQ-Sentinel service account" mq-sentinel
+    fi
+
+    # Permissions on config + audit dirs
+    chown -R mq-sentinel:mq-sentinel /var/log/mq-sentinel
+    chown -R root:mq-sentinel /etc/mq-sentinel
+    chmod 0750 /etc/mq-sentinel
+    chmod 0700 /etc/mq-sentinel/secrets
+    chmod 0640 /etc/mq-sentinel/mq-sentinel.env
+
+    # Reload systemd + enable (but don't start until OIDC is configured)
+    if [ -d /run/systemd/system ]; then
+        systemctl daemon-reload || true
+        systemctl enable mq-sentinel.service || true
+    fi
+
+    cat <<'BANNER'
+================================================================================
+  MQ-Sentinel installed.
+
+  Next steps:
+    1. Edit /etc/mq-sentinel/mq-sentinel.env — set MQS_AUTH_OIDC_* values.
+    2. Drop QM creds in /etc/mq-sentinel/secrets/<ref>/{username,password}.
+    3. Edit /etc/mq-sentinel/inventory/inventory.yaml.
+    4. systemctl start mq-sentinel
+    5. journalctl -u mq-sentinel -f
+================================================================================
+BANNER
+fi
+
+#DEBHELPER#
+exit 0

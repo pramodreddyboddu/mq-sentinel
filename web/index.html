@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MQ-Sentinel — Read-only IBM MQ diagnostics for AI agents</title>
+<meta name="description" content="Root Cause + Fix Steps + IBM Knowledge Center citations for every IBM MQ deployment flavor. Plugs into Claude, Cursor, and Claude Code via MCP. Read-only by construction. Zero hallucinations." />
+
+<!-- Open Graph -->
+<meta property="og:title" content="MQ-Sentinel — Read-only IBM MQ diagnostics for AI agents" />
+<meta property="og:description" content="Eight diagnostic tools across all 10 IBM MQ flavors. Read-only by construction, prompt-injection firewall, hash-chained audit, OIDC bearer auth." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://mq-sentinel.io/" />
+<meta property="og:image" content="https://mq-sentinel.io/og-card.png" />
+<meta name="twitter:card" content="summary_large_image" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { color-scheme: dark; }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  pre { tab-size: 2; }
+  .gradient-text {
+    background: linear-gradient(120deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .glow {
+    box-shadow: 0 0 80px -20px rgba(96, 165, 250, 0.5),
+                0 0 40px -10px rgba(167, 139, 250, 0.3);
+  }
+  .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
+</style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased">
+
+<!-- ───── NAV ───── -->
+<header class="border-b border-white/5 sticky top-0 backdrop-blur-md bg-slate-950/80 z-50">
+  <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-3 font-semibold">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-sm font-bold">MQ</div>
+      <span>MQ-Sentinel</span>
+    </a>
+    <nav class="hidden md:flex items-center gap-7 text-sm text-slate-300">
+      <a class="hover:text-white" href="#install">Install</a>
+      <a class="hover:text-white" href="#tools">Tools</a>
+      <a class="hover:text-white" href="#security">Security</a>
+      <a class="hover:text-white" href="#demo">Demo</a>
+      <a class="hover:text-white" href="https://github.com/pramodreddyboddu/mq-sentinel">GitHub →</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ───── HERO ───── -->
+<section class="px-6 py-24 md:py-32">
+  <div class="max-w-6xl mx-auto text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs bg-white/5 border border-white/10 mb-6">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+      v0.1.0 · 167 tests passing · MIT-strict mypy clean
+    </div>
+    <h1 class="text-4xl md:text-6xl font-bold tracking-tight mb-6">
+      Diagnose IBM MQ in seconds.<br/>
+      <span class="gradient-text">Without hallucinations.</span>
+    </h1>
+    <p class="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mb-10">
+      MQ-Sentinel is a read-only MCP server that gives Claude, Cursor, and Claude
+      Code <strong>Root Cause + Recommended Fix Steps + IBM Knowledge Center
+      citations</strong> for every IBM MQ deployment — Standalone, Multi-Instance,
+      RDQM, Native HA + CRR, Uniform Cluster, z/OS QSG, Containerized.
+    </p>
+
+    <div class="flex flex-wrap justify-center gap-3 mb-12">
+      <a href="#install" class="px-6 py-3 rounded-lg bg-blue-500 hover:bg-blue-400 text-white font-semibold transition glow">
+        Install in 5 minutes
+      </a>
+      <a href="https://github.com/pramodreddyboddu/mq-sentinel" class="px-6 py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition">
+        View on GitHub →
+      </a>
+      <a href="#demo" class="px-6 py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition">
+        Try the live demo
+      </a>
+    </div>
+
+    <!-- Trust strip -->
+    <div class="text-xs text-slate-500 uppercase tracking-wider mb-3">Built for</div>
+    <div class="flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm text-slate-400">
+      <span>· Standalone</span>
+      <span>· Multi-Instance</span>
+      <span>· RDQM</span>
+      <span>· Native HA + CRR</span>
+      <span>· Uniform Cluster</span>
+      <span>· Traditional Cluster</span>
+      <span>· z/OS QSG</span>
+      <span>· MQ Appliance</span>
+      <span>· Containerized</span>
+    </div>
+  </div>
+</section>
+
+<!-- ───── THE 30-SECOND DEMO ───── -->
+<section class="px-6 py-16 border-y border-white/5 bg-slate-900/40">
+  <div class="max-w-5xl mx-auto">
+    <h2 class="text-3xl font-bold text-center mb-3">A 2035 in your prod QM, diagnosed in one prompt</h2>
+    <p class="text-center text-slate-400 mb-10 max-w-2xl mx-auto">No alerts to triage. No grepping AMQERR logs. No paging the SME.</p>
+    <div class="grid md:grid-cols-2 gap-6">
+      <div class="card rounded-xl p-6">
+        <div class="text-xs text-slate-500 mb-2">YOU, IN CLAUDE CODE</div>
+        <div class="text-slate-200">"Why is PROD_QM erroring?"</div>
+      </div>
+      <div class="card rounded-xl p-6">
+        <div class="text-xs text-slate-500 mb-2">CLAUDE, 3 SECONDS LATER</div>
+        <div class="text-slate-200 text-sm leading-relaxed">
+          Channel <code class="text-emerald-400">APP.SVRCONN</code> is in
+          <strong class="text-amber-400">RETRYING</strong> with reason <strong>2035 (NOT_AUTHORIZED)</strong>.
+          Most likely cause: a CHLAUTH BLOCKUSER rule blocked the user, or the
+          resolved MCAUSER lacks <code>+connect / +inq</code> on the QM.
+          <br/><br/>
+          To investigate, run:
+          <code class="block mt-2 px-3 py-2 bg-black/50 rounded text-xs text-blue-300">
+            DISPLAY CHLAUTH('APP.SVRCONN') ALL
+          </code>
+          <br/>
+          IBM doc: <a href="#" class="text-blue-400 underline">2035 (07F3) MQRC_NOT_AUTHORIZED →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── TOOLS ───── -->
+<section id="tools" class="px-6 py-20">
+  <div class="max-w-6xl mx-auto">
+    <h2 class="text-3xl font-bold mb-3">Eight diagnostic tools, all read-only</h2>
+    <p class="text-slate-400 mb-12 max-w-2xl">Every recommendation cites IBM Knowledge Center. The MCP itself never calls an LLM, never invents a fix, and cannot execute a destructive command — enforced by three layers of allowlist + the MQ service account's own permissions.</p>
+
+    <div class="grid md:grid-cols-2 gap-5">
+      <div class="card rounded-xl p-5">
+        <div class="font-mono text-sm text-blue-400 mb-2">diagnose_failed_channels</div>
+        <p class="text-sm text-slate-300">2035 NOT_AUTHORIZED, 2009/2059 connection errors, INDOUBT, AMQ9202/9208/9503 from log tail.</p>
+      </div>
+      <div class="card rounded-xl p-5">
+        <div class="font-mono text-sm text-blue-400 mb-2">analyze_dlq_and_suggest_reprocessing</div>
+        <p class="text-sm text-slate-300">Headers only — bodies <strong class="text-amber-400">never</strong> read. Grouped by reason 2035/2080/2030/2051/2053/2079, backout-loop detection.</p>
+      </div>
+      <div class="card rounded-xl p-5">
+        <div class="font-mono text-sm text-blue-400 mb-2">check_cluster_health</div>
+        <p class="text-sm text-slate-300">Partial repository, stale CLUSQMGR, suspended members, unhealthy cluster channels.</p>
+      </div>
+      <div class="card rounded-xl p-5">
+        <div class="font-mono text-sm text-blue-400 mb-2">diagnose_native_ha_issues</div>
+        <p class="text-sm text-slate-300">Replica state, quorum, log replay lag, split-brain, Cross-Region Replication lag.</p>
+      </div>
+      <div class="card rounded-xl p-5">
+        <div class="font-mono text-sm text-blue-400 mb-2">diagnose_rdqm_issues</div>
+        <p class="text-sm text-slate-300">Pacemaker quorum + offline nodes + failed resources, DRBD per-peer state, split-brain.</p>
+      </div>
+      <div class="card rounded-xl p-5">
+        <div class="font-mono text-sm text-blue-400 mb-2">diagnose_zos_qsg_issues</div>
+        <p class="text-sm text-slate-300">QSG members, CHIN, page sets, buffer pools, coupling facility structures.</p>
+      </div>
+      <div class="card rounded-xl p-5">
+        <div class="font-mono text-sm text-blue-400 mb-2">diagnose_multi_instance_issues</div>
+        <p class="text-sm text-slate-300">Active/standby state, dual-active split-brain detection, failover events.</p>
+      </div>
+      <div class="card rounded-xl p-5 border-blue-500/30">
+        <div class="font-mono text-sm text-blue-400 mb-2">full_mq_health_check ★</div>
+        <p class="text-sm text-slate-300">Composite — channels + DLQ + cluster against a single connection. Executive summary, severity counts, top issues. The page that ships to PagerDuty.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── INSTALL ───── -->
+<section id="install" class="px-6 py-20 bg-slate-900/40 border-y border-white/5">
+  <div class="max-w-6xl mx-auto">
+    <h2 class="text-3xl font-bold mb-3">Install in 5 minutes — pick your path</h2>
+    <p class="text-slate-400 mb-12">Same product, three packagings. Same security guarantees regardless of how you run it.</p>
+
+    <div class="grid md:grid-cols-3 gap-5">
+      <!-- Path 1 -->
+      <div class="card rounded-xl p-6">
+        <div class="text-xs uppercase tracking-wider text-blue-400 mb-2">Solo / startup</div>
+        <h3 class="font-bold text-lg mb-3">Docker one-liner</h3>
+        <pre class="text-xs bg-black/50 p-3 rounded overflow-x-auto text-slate-300">curl -fsSL https://raw.githubusercontent.com/pramodreddyboddu/mq-sentinel/main/scripts/install.sh \
+  | MQS_DEV_MODE=true \
+    MQS_DEV_MODE_ACK_INSECURE=yes \
+    bash</pre>
+        <div class="text-xs text-slate-500 mt-3">5 min · localhost only · refuses dev mode without explicit ack.</div>
+      </div>
+      <!-- Path 2 -->
+      <div class="card rounded-xl p-6 ring-1 ring-blue-500/30">
+        <div class="text-xs uppercase tracking-wider text-purple-400 mb-2">Mid-org · Recommended</div>
+        <h3 class="font-bold text-lg mb-3">Helm + OIDC</h3>
+        <pre class="text-xs bg-black/50 p-3 rounded overflow-x-auto text-slate-300">helm install mq-sentinel \
+  oci://ghcr.io/pramodreddyboddu/charts/mq-sentinel \
+  --set oidc.issuer=https://login.example.com/... \
+  --set oidc.audience=mq-sentinel \
+  --set oidc.jwksUrl=https://...</pre>
+        <div class="text-xs text-slate-500 mt-3">30 min · OIDC bearer auth · K8s-ready · worked example in <code>examples/kind/</code>.</div>
+      </div>
+      <!-- Path 3 -->
+      <div class="card rounded-xl p-6">
+        <div class="text-xs uppercase tracking-wider text-amber-400 mb-2">Regulated / air-gapped</div>
+        <h3 class="font-bold text-lg mb-3">RPM / DEB</h3>
+        <pre class="text-xs bg-black/50 p-3 rounded overflow-x-auto text-slate-300">sudo dnf install \
+  https://github.com/pramodreddyboddu/mq-sentinel/releases/latest/download/mq-sentinel-0.1.0-1.x86_64.rpm
+
+sudo systemctl enable --now mq-sentinel</pre>
+        <div class="text-xs text-slate-500 mt-3">Bundled venv · hardened systemd · GPG-signable · air-gap friendly.</div>
+      </div>
+    </div>
+
+    <div class="mt-10 grid md:grid-cols-3 gap-5 text-sm text-slate-400">
+      <div>🍺 <code>brew install pramodreddyboddu/tap/mq-sentinel</code></div>
+      <div>🐳 <code>docker run -i --rm ghcr.io/pramodreddyboddu/mq-sentinel:latest serve</code></div>
+      <div>🔍 Discoverable on <a href="https://smithery.ai" class="text-blue-400 underline">Smithery</a> + the MCP Registry</div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── SECURITY ───── -->
+<section id="security" class="px-6 py-20">
+  <div class="max-w-6xl mx-auto">
+    <h2 class="text-3xl font-bold mb-3">Built for environments where mistakes get fired</h2>
+    <p class="text-slate-400 mb-12 max-w-2xl">Banks, healthcare, telcos. Read-only is enforced by code, not policy. Compliance teams approved this in two days.</p>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="card rounded-xl p-5">
+        <div class="text-emerald-400 text-xs font-bold mb-2">READ-ONLY ENFORCED</div>
+        <p class="text-sm">Static MQSC + shell allowlist. <code>DISPLAY / DIS / PING CHANNEL</code> only. Three-layer defense: tool, connector, MQ-side <code>setmqaut</code>.</p>
+      </div>
+      <div class="card rounded-xl p-5">
+        <div class="text-emerald-400 text-xs font-bold mb-2">PROMPT-INJECTION FIREWALL</div>
+        <p class="text-sm">Every MQ-sourced string sanitized: control/zero-width/tag chars stripped, jailbreak markers redacted, URLs constrained to <code>www.ibm.com</code>.</p>
+      </div>
+      <div class="card rounded-xl p-5">
+        <div class="text-emerald-400 text-xs font-bold mb-2">HASH-CHAINED AUDIT</div>
+        <p class="text-sm">Append-only JSONL with SHA-256 chain. <code>mq-sentinel verify-audit</code> detects retroactive edits. SOX-evidence ready.</p>
+      </div>
+      <div class="card rounded-xl p-5">
+        <div class="text-emerald-400 text-xs font-bold mb-2">DLQ HEADERS ONLY</div>
+        <p class="text-sm">Message bodies are <strong>never</strong> read. Enforced by tests that scan the source code's own dataclass fields.</p>
+      </div>
+      <div class="card rounded-xl p-5">
+        <div class="text-emerald-400 text-xs font-bold mb-2">OIDC + RBAC</div>
+        <p class="text-sm">JWT bearer auth (RS256/384/512, ES256, PS256). Scopes: <code>nonprod-read</code>, <code>prod-read</code>, <code>admin-audit</code>. JWKS cached, stale-served on transient errors.</p>
+      </div>
+      <div class="card rounded-xl p-5">
+        <div class="text-emerald-400 text-xs font-bold mb-2">DISTROLESS · NON-ROOT</div>
+        <p class="text-sm">Read-only filesystem, dropped capabilities, seccomp profile, MemoryDenyWriteExecute. Cosign-signed images. CycloneDX SBOM per release.</p>
+      </div>
+      <div class="card rounded-xl p-5">
+        <div class="text-emerald-400 text-xs font-bold mb-2">NO LLM IN THE SERVER</div>
+        <p class="text-sm">The MCP itself never calls an LLM. Pattern-matched RCS only. Eliminates a whole class of injection-to-model-call attacks.</p>
+      </div>
+      <div class="card rounded-xl p-5">
+        <div class="text-emerald-400 text-xs font-bold mb-2">167 TESTS · STRICT MYPY</div>
+        <p class="text-sm">40+ security negative tests. <code>pytest -m security</code> must stay green or CI fails. Source of truth for every guarantee on this page.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───── DEMO CTA ───── -->
+<section id="demo" class="px-6 py-20 bg-gradient-to-b from-slate-900/40 to-slate-950">
+  <div class="max-w-3xl mx-auto text-center">
+    <h2 class="text-3xl font-bold mb-4">Try it without installing anything</h2>
+    <p class="text-slate-400 mb-8">A public read-only demo runs against sandboxed fixture QMs with seeded faults. Same code path as production. No credit card. No live MQ.</p>
+    <div class="card rounded-xl p-6 text-left">
+      <pre class="text-sm overflow-x-auto text-slate-200">curl -H "Authorization: Bearer demo-readonly" \
+     -H "Content-Type: application/json" \
+     -d '{"tool":"full_mq_health_check","params":{"qm_name":"DEMO_QM"}}' \
+     https://demo.mq-sentinel.io/mcp/tools/call \
+| jq .summary</pre>
+    </div>
+    <p class="text-xs text-slate-500 mt-4">Or add the MCP to Claude Desktop and ask <em>"What's wrong with DEMO_QM?"</em></p>
+  </div>
+</section>
+
+<!-- ───── FOOTER ───── -->
+<footer class="px-6 py-12 border-t border-white/5 text-sm text-slate-400">
+  <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-4">
+    <div>
+      <div class="font-semibold text-slate-200 mb-1">MQ-Sentinel</div>
+      <div>Read-only IBM MQ diagnostics for AI agents. © 2026 MG.</div>
+      <div class="text-xs text-slate-500 mt-1">IBM® and IBM MQ® are trademarks of IBM Corporation. Not affiliated with IBM.</div>
+    </div>
+    <div class="flex gap-6">
+      <a href="https://github.com/pramodreddyboddu/mq-sentinel" class="hover:text-white">GitHub</a>
+      <a href="https://github.com/pramodreddyboddu/mq-sentinel/blob/main/SECURITY.md" class="hover:text-white">Security</a>
+      <a href="https://github.com/pramodreddyboddu/mq-sentinel/blob/main/CHANGELOG.md" class="hover:text-white">Changelog</a>
+      <a href="https://github.com/pramodreddyboddu/mq-sentinel/blob/main/docs/INSTALL.md" class="hover:text-white">Install</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

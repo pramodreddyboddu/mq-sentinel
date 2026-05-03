@@ -1,0 +1,14 @@
+# Copy to cloudflared.yml and fill in your tunnel ID + credentials path.
+tunnel: REPLACE_WITH_TUNNEL_ID
+credentials-file: /etc/cloudflared/REPLACE_WITH_TUNNEL_ID.json
+
+ingress:
+  # Public demo MCP endpoint
+  - hostname: demo.mq-sentinel.io
+    service: http://mq-sentinel:8080
+    originRequest:
+      connectTimeout: 5s
+      noTLSVerify: false
+      httpHostHeader: demo.mq-sentinel.io
+  # Catch-all
+  - service: http_status:404

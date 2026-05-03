@@ -1,0 +1,39 @@
+services:
+  mq-sentinel:
+    image: ghcr.io/pramodreddyboddu/mq-sentinel:latest
+    container_name: mq-sentinel-demo
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,size=64m
+    environment:
+      MQS_SERVER_TRANSPORT: http
+      MQS_SERVER_HTTP_HOST: 0.0.0.0
+      MQS_SERVER_HTTP_PORT: "8080"
+      MQS_SERVER_ENVIRONMENT: dev
+      MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV: "true"
+      MQS_SECURITY_RATE_LIMIT_PER_MINUTE: "20"
+      MQS_AUDIT_LOG_PATH: /var/audit/audit.jsonl
+    volumes:
+      - audit:/var/audit
+    networks: [demo]
+    expose: ["8080"]
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: mq-sentinel-tunnel
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    networks: [demo]
+    depends_on: [mq-sentinel]
+
+networks:
+  demo:
+
+volumes:
+  audit:

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/server-manifest-v1.json",
+  "name": "mq-sentinel",
+  "displayName": "MQ-Sentinel",
+  "version": "0.1.0",
+  "description": "Read-only IBM MQ diagnostic MCP server. Root Cause + Fix Steps + IBM KC citations for every IBM MQ deployment flavor.",
+  "author": {
+    "name": "MG",
+    "url": "https://github.com/pramodreddyboddu/mq-sentinel"
+  },
+  "license": "Proprietary",
+  "homepage": "https://github.com/pramodreddyboddu/mq-sentinel",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pramodreddyboddu/mq-sentinel.git"
+  },
+  "categories": ["messaging", "observability", "enterprise", "security"],
+  "keywords": ["ibm-mq", "diagnostics", "native-ha", "rdqm", "zos", "rcs", "read-only"],
+  "icon": "https://raw.githubusercontent.com/pramodreddyboddu/mq-sentinel/main/web/logo.svg",
+  "tools": [
+    { "name": "diagnose_failed_channels",            "description": "Channel state + AMQERR analysis (2035, 2009, 2059, INDOUBT, AMQ9202/9208/9503)." },
+    { "name": "analyze_dlq_and_suggest_reprocessing","description": "Dead-letter queue inspection (HEADERS ONLY — bodies never read)." },
+    { "name": "check_cluster_health",                "description": "Partial repos, stale CLUSQMGR, suspended members, unhealthy cluster channels." },
+    { "name": "diagnose_native_ha_issues",           "description": "Replica state, quorum, log replay lag, CRR." },
+    { "name": "diagnose_rdqm_issues",                "description": "Pacemaker quorum, DRBD per-peer state, split-brain." },
+    { "name": "diagnose_zos_qsg_issues",             "description": "QSG members, CHIN, page sets, buffer pools, CF structures." },
+    { "name": "diagnose_multi_instance_issues",      "description": "Active/standby state, dual-active split, failover events." },
+    { "name": "full_mq_health_check",                "description": "Composite: channels + DLQ + cluster, ranked by severity." }
+  ],
+  "transports": {
+    "stdio": {
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm",
+        "--read-only",
+        "--cap-drop", "ALL",
+        "--security-opt", "no-new-privileges:true",
+        "ghcr.io/pramodreddyboddu/mq-sentinel:latest",
+        "serve", "--transport", "stdio"
+      ],
+      "env": {
+        "MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV": "true"
+      }
+    },
+    "http": {
+      "url": "https://demo.mq-sentinel.io/mcp",
+      "auth": {
+        "type": "oauth2-bearer",
+        "issuer": "https://login.mq-sentinel.io/realms/public-demo",
+        "audience": "mq-sentinel"
+      },
+      "note": "Public read-only demo — sandboxed fixture QMs only. Self-host for your own QMs."
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "MQS_SERVER_ENVIRONMENT": {
+        "type": "string", "enum": ["dev", "staging", "prod"], "default": "dev"
+      },
+      "MQS_AUTH_OIDC_ISSUER":   { "type": "string", "format": "uri" },
+      "MQS_AUTH_OIDC_AUDIENCE": { "type": "string" },
+      "MQS_AUTH_OIDC_JWKS_URL": { "type": "string", "format": "uri" }
+    }
+  }
+}

@@ -1,0 +1,93 @@
+# Smithery (smithery.ai) configuration for MQ-Sentinel.
+# Smithery is the largest MCP discovery hub — Cursor, Claude Desktop, and
+# many open-source clients pull listings from there.
+#
+# Submit by:
+#   1. Push this file to the repo root (already done).
+#   2. Visit https://smithery.ai → "Add Server" → connect this GitHub repo.
+#   3. Smithery picks up smithery.yaml and indexes the MCP.
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    additionalProperties: false
+    properties:
+      mqEnvironment:
+        type: string
+        title: "Environment"
+        description: "dev | staging | prod — used in audit + RBAC."
+        enum: ["dev", "staging", "prod"]
+        default: "dev"
+      oidcIssuer:
+        type: string
+        title: "OIDC Issuer (prod only)"
+        description: "Your OpenID Connect issuer URL. Required when environment=prod."
+      oidcAudience:
+        type: string
+        title: "OIDC Audience (prod only)"
+        default: "mq-sentinel"
+      oidcJwksUrl:
+        type: string
+        title: "OIDC JWKS URL (prod only)"
+      disableAuthForLocalDev:
+        type: boolean
+        title: "Disable auth (dev/demo only)"
+        description: "ONLY enable for laptop POC. Refuses production environments."
+        default: true
+  commandFunction: |
+    (config) => {
+      const env = {
+        MQS_SERVER_TRANSPORT: "stdio",
+        MQS_SERVER_ENVIRONMENT: config.mqEnvironment || "dev",
+      };
+      if (config.disableAuthForLocalDev) {
+        env.MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV = "true";
+      }
+      if (config.oidcIssuer)    env.MQS_AUTH_OIDC_ISSUER    = config.oidcIssuer;
+      if (config.oidcAudience)  env.MQS_AUTH_OIDC_AUDIENCE  = config.oidcAudience;
+      if (config.oidcJwksUrl)   env.MQS_AUTH_OIDC_JWKS_URL  = config.oidcJwksUrl;
+      return {
+        command: "docker",
+        args: [
+          "run", "-i", "--rm",
+          "--read-only",
+          "--cap-drop", "ALL",
+          "--security-opt", "no-new-privileges:true",
+          "ghcr.io/pramodreddyboddu/mq-sentinel:latest",
+          "serve", "--transport", "stdio"
+        ],
+        env: env
+      };
+    }
+
+# Public-facing metadata for Smithery's directory page.
+displayName: "MQ-Sentinel"
+description: |
+  Read-only IBM MQ diagnostic MCP server. Returns Root Cause + Recommended
+  Fix Steps + IBM Knowledge Center citations for every IBM MQ deployment
+  flavor (Standalone, Multi-Instance, RDQM, Native HA + CRR, Uniform Cluster,
+  Traditional Cluster, z/OS QSG, MQ Appliance, Containerized) — read-only by
+  construction, prompt-injection firewall, hash-chained audit log.
+
+categories:
+  - "messaging"
+  - "observability"
+  - "enterprise"
+  - "security"
+
+tags:
+  - "ibm-mq"
+  - "diagnostics"
+  - "rcs"
+  - "native-ha"
+  - "rdqm"
+  - "zos"
+  - "oidc"
+  - "hash-chained-audit"
+  - "read-only"
+  - "no-hallucinations"
+
+license: "Proprietary (open-core BSL-1.1 planned)"
+homepage: "https://github.com/pramodreddyboddu/mq-sentinel"
+icon: "https://raw.githubusercontent.com/pramodreddyboddu/mq-sentinel/main/web/logo.svg"

@@ -120,3 +120,12 @@ release: ci docker pkg  ## Full release pipeline (run in CI)
 clean:               ## Remove build artifacts
 	rm -rf $(DIST_DIR) build *.egg-info .pytest_cache .mypy_cache .ruff_cache htmlcov coverage.xml
 	find . -name __pycache__ -type d -exec rm -rf {} +
+
+demo:                ## Run the terminal demo (cached, no install required)
+	@DEMO_MODE=cached bash demo/run.sh
+
+demo-fast:           ## Run the demo at recording speed
+	@DEMO_MODE=cached DEMO_SPEED=fast bash demo/run.sh
+
+demo-record:         ## Record the demo as an asciinema cast (requires asciinema)
+	@bash demo/record.sh

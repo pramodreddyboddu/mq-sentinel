@@ -13,6 +13,22 @@ Root cause + recommended fix steps + IBM Knowledge Center citations — for ever
 
 ---
 
+## 🎬 See it in 90 seconds
+
+```bash
+git clone https://github.com/pramodreddyboddu/mq-sentinel.git
+cd mq-sentinel
+make demo
+```
+
+Watch MQ-Sentinel diagnose a real `2035 NOT_AUTHORIZED`, an `INDOUBT` channel, a 1247-message DLQ, and a Native HA replica disconnect — all against the bundled fixture sandbox. No live IBM MQ required.
+
+[![asciicast](https://img.shields.io/badge/▶-watch%20the%20cast-9333ea?style=for-the-badge)](demo/README.md) &nbsp; [![Try live demo](https://img.shields.io/badge/🌐-try%20live%20demo-3b82f6?style=for-the-badge)](https://mq-sentinel.io)
+
+> Want to record it for sharing? `make demo-record` produces a browser-playable asciinema cast.
+
+---
+
 ## Why MQ-Sentinel
 
 IBM MQ admins burn hours chasing `2035`s, DLQ storms, Native HA replica lag, and stale `CLUSQMGR` entries across 9.2 / 9.3 / 9.4 / z/OS. MQ-Sentinel plugs into any MCP-capable agent (Claude, Cursor, Claude Code) and returns a **typed Root Cause Summary** with:

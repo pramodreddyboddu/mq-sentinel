@@ -1,0 +1,33 @@
+{
+  "tool": "diagnose_failed_channels",
+  "qm_name": "DEMO_QM",
+  "topology": {
+    "topology": "native_ha",
+    "mq_version": "9.4.0.0",
+    "platform": "UNIX",
+    "is_native_ha": true
+  },
+  "findings": [
+    {
+      "issue": "Channel APP.SVRCONN returned MQRC 2035 (NOT_AUTHORIZED)",
+      "severity": "HIGH",
+      "reason_code": 2035,
+      "root_cause": "The connecting principal failed authorization. Common causes: a CHLAUTH BLOCKUSER rule blocked the user, the resolved MCAUSER lacks +connect/+inq on the QM, or CONNAUTH credentials failed.",
+      "fix_steps": [
+        "DISPLAY CHLAUTH('APP.SVRCONN') ALL",
+        "DISPLAY CHSTATUS('APP.SVRCONN') ALL",
+        "DISPLAY QMGR CONNAUTH",
+        "DISPLAY AUTHINFO(*) ALL"
+      ],
+      "doc_refs": [
+        {
+          "title": "2035 (07F3) MQRC_NOT_AUTHORIZED",
+          "url": "https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2035-07f3-rc2035-mqrc-not-authorized"
+        }
+      ],
+      "confidence": "High"
+    }
+  ],
+  "raw_evidence": {"channels_examined": 4, "log_tail_lines": 3},
+  "trust_level": "rcs_findings"
+}

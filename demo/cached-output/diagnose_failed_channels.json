@@ -14,11 +14,37 @@
       "reason_code": 2035,
       "root_cause": "The connecting principal failed authorization. Common causes: a CHLAUTH BLOCKUSER rule blocked the user, the resolved MCAUSER lacks +connect/+inq on the QM, or CONNAUTH credentials failed.",
       "fix_steps": [
-        "DISPLAY CHLAUTH('APP.SVRCONN') ALL",
+        "DISPLAY CHLAUTH('APP.SVRCONN') MATCH(RUNCHECK) ALL",
         "DISPLAY CHSTATUS('APP.SVRCONN') ALL",
         "DISPLAY QMGR CONNAUTH",
         "DISPLAY AUTHINFO(*) ALL"
       ],
+      "remediation_steps": [
+        {
+          "scenario": "CHLAUTH BLOCKUSER rule incorrectly matching",
+          "commands": [
+            "SET CHLAUTH('APP.SVRCONN') TYPE(BLOCKUSER) USERLIST('badactor') ACTION(REPLACE)"
+          ],
+          "notes": "Replace the USERLIST with only the principals you actually want to block."
+        },
+        {
+          "scenario": "MCAUSER lacks queue manager / queue permissions",
+          "commands": [
+            "SET AUTHREC PRINCIPAL('mcauser') OBJTYPE(QMGR) AUTHADD(CONNECT, INQ)",
+            "SET AUTHREC PROFILE('PAYMENTS.IN') OBJTYPE(QUEUE) PRINCIPAL('mcauser') AUTHADD(PUT, INQ, BROWSE)"
+          ],
+          "notes": "Replace 'mcauser' with the value returned by DISPLAY CHSTATUS MCAUSER."
+        },
+        {
+          "scenario": "CONNAUTH credentials rejected (password / OS user)",
+          "commands": [
+            "ALTER AUTHINFO('SYSTEM.DEFAULT.AUTHINFO.IDPWOS') AUTHTYPE(IDPWOS) ADOPTCTX(YES) CHCKCLNT(REQDADM)",
+            "REFRESH SECURITY TYPE(CONNAUTH)"
+          ],
+          "notes": "Then retry the client connection. Watch AMQERR for AMQ5540/AMQ5541."
+        }
+      ],
+      "execution_policy": "MQ-Sentinel never executes remediation_steps. These are IBM-recommended fix commands returned as TEXT only for the operator to review and run manually in a change window. The MCP server is read-only by construction.",
       "doc_refs": [
         {
           "title": "2035 (07F3) MQRC_NOT_AUTHORIZED",

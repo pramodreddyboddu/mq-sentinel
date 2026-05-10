@@ -11,10 +11,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from mq_sentinel.rcs.engine import RCSFinding, Severity
+from mq_sentinel.rcs.engine import RCSFinding, RemediationScenario, Severity
 from mq_sentinel.rcs.kc_registry import KCRegistry
 
-_PAGESET_HIGH = 80   # %
+_PAGESET_HIGH = 80  # %
 _PAGESET_CRITICAL = 95
 _BUFFERPOOL_LOW_FREE_PCT = 10  # < 10% free pages → HIGH
 
@@ -83,6 +83,16 @@ def _check_qsg_members(
                 doc_refs=tuple(registry.lookup_topic("zos_qsg_overview", mq_version)),
                 confidence="High",
                 evidence={"qsg": qsg, "member": name, "status": status},
+                remediation_steps=(
+                    RemediationScenario(
+                        scenario="Start the inactive QM (z/OS operator command)",
+                        commands=(
+                            f"/{name} START QMGR",
+                            "DISPLAY GROUP",
+                        ),
+                        notes="z/OS console / SDSF. Replace {name} with the started-task prefix.",
+                    ),
+                ),
             )
         )
     return findings
@@ -114,6 +124,17 @@ def _check_chin(
             doc_refs=tuple(registry.lookup_topic("zos_chin", mq_version)),
             confidence="High",
             evidence={"chin_status": status},
+            remediation_steps=(
+                RemediationScenario(
+                    scenario="Start the channel initiator address space",
+                    commands=(
+                        "+CSQ8 START CHINIT",
+                        "DISPLAY QMSTATUS CHINIT",
+                    ),
+                    notes="z/OS operator command (SDSF or console). Replace 'CSQ8' "
+                    "with your QM's command prefix.",
+                ),
+            ),
         )
     ]
 
@@ -152,6 +173,30 @@ def _check_pagesets(
                 doc_refs=tuple(registry.lookup_topic("zos_pageset", mq_version)),
                 confidence="High",
                 evidence={"psid": psid, "use_pct": str(use_pct)},
+                remediation_steps=(
+                    RemediationScenario(
+                        scenario="Expand the page set with an extension dataset",
+                        commands=(
+                            "# Allocate new dataset via JCL (sample):",
+                            "//ALLOCNEW EXEC PGM=IEFBR14",
+                            f"//NEWPS DD DSN=CSQ.PAGESET.PS{psid}.EXT01,DISP=(NEW,CATLG,DELETE),",
+                            "//            SPACE=(CYL,(100,100,0)),LIKE=CSQ.PAGESET.PS{psid}",
+                            "# Then define to MQ via CSQUTIL FORMAT/EXTEND or DSN command.",
+                        ),
+                        notes="Coordinate with z/OS storage team. Adding an extension is "
+                        "non-disruptive but requires DASD allocation.",
+                    ),
+                    RemediationScenario(
+                        scenario="Rebalance queues to a different page set",
+                        commands=(
+                            f"DISPLAY QUEUE(*) WHERE(STGCLASS LIKE 'PS{psid}*')",
+                            "# Move high-traffic queues to a less-full STGCLASS:",
+                            "ALTER QLOCAL('NOISY.QUEUE') STGCLASS('STGCLASS_FOR_PS2')",
+                        ),
+                        notes="STGCLASS change affects new messages only. Drain queue first "
+                        "if you need existing messages migrated.",
+                    ),
+                ),
             )
         )
     return findings
@@ -188,6 +233,20 @@ def _check_bufferpools(
                 doc_refs=tuple(registry.lookup_topic("zos_bufferpool", mq_version)),
                 confidence="High",
                 evidence={"bufferpool": bpid, "free_pct": str(free_pct)},
+                remediation_steps=(
+                    RemediationScenario(
+                        scenario="Increase buffer pool size dynamically",
+                        commands=(
+                            f"ALTER BUFFPOOL({bpid}) BUFFERS(50000)",
+                            f"DISPLAY USAGE BUFFPOOL({bpid})",
+                        ),
+                        notes=(
+                            "Persists across restart. Sized in 4KiB pages — 50,000 "
+                            "buffers ≈ 200MB. Region size (REGION=) on the MSTR "
+                            "JCL must accommodate."
+                        ),
+                    ),
+                ),
             )
         )
     return findings
@@ -225,6 +284,18 @@ def _check_cf_structures(
                 doc_refs=tuple(registry.lookup_topic("zos_cf_structure", mq_version)),
                 confidence="High",
                 evidence={"structure": name, "status": status},
+                remediation_steps=(
+                    RemediationScenario(
+                        scenario="Recover the failed structure (sysplex operator)",
+                        commands=(
+                            f"D XCF,STR,STRNAME={name}",
+                            f"SETXCF FORCE,STR,STRNAME={name}",
+                            "# Then re-allocate via CFRM policy ACTIVATE if needed.",
+                        ),
+                        notes="⚠️ SETXCF FORCE discards in-flight structure data. Engage IBM "
+                        "Support before running. Verify alternate CF exists in CFRM policy first.",
+                    ),
+                ),
             )
         )
     return findings

@@ -41,9 +41,7 @@ def run_zos_checks(
         if "QSGNAME" in row and not qsg_name:
             qsg_name = str(row["QSGNAME"])
         if "QMNAME" in row:
-            members.append(
-                {"name": str(row["QMNAME"]), "status": str(row.get("STATUS", ""))}
-            )
+            members.append({"name": str(row["QMNAME"]), "status": str(row.get("STATUS", ""))})
 
     chin_status = ""
     for row in chinit_rows:

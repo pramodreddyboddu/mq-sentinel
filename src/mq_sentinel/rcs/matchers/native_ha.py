@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mq_sentinel.rcs.engine import RCSFinding, Severity
+from mq_sentinel.rcs.engine import RCSFinding, RemediationScenario, Severity
 from mq_sentinel.rcs.kc_registry import KCRegistry
 
 _LAG_PCT_MEDIUM = 95  # < 95% replay → MEDIUM
@@ -94,6 +94,22 @@ def _check_quorum(
                 "total": str(len(instances)),
                 "required": str(required),
             },
+            remediation_steps=(
+                RemediationScenario(
+                    scenario="Restart unhealthy replica pods in Kubernetes",
+                    commands=("kubectl -n mq rollout restart statefulset/QM_NAME",),
+                    notes="Replace 'mq' namespace and statefulset name with yours. "
+                    "Watch INSYNC=YES return for each replica.",
+                ),
+                RemediationScenario(
+                    scenario="Verify PVC + storage class health",
+                    commands=(
+                        "kubectl -n mq get pvc",
+                        "kubectl -n mq describe pvc data-QM_NAME-1",
+                    ),
+                    notes="Common quorum-loss cause: a replica's PVC stuck in Pending.",
+                ),
+            ),
         )
     ]
 
@@ -123,6 +139,17 @@ def _check_active_instance(
                 doc_refs=tuple(registry.lookup_topic("native_ha_quorum_lost", mq_version)),
                 confidence="High",
                 evidence={"actives": "0", "total": str(len(instances))},
+                remediation_steps=(
+                    RemediationScenario(
+                        scenario="Election will run automatically once quorum returns",
+                        commands=(
+                            "kubectl -n mq get pods -l app.kubernetes.io/name=ibm-mq",
+                            "kubectl -n mq logs QM_NAME-0 | tail -100",
+                        ),
+                        notes="Bring replicas back online (PVC, node, network). MQ elects "
+                        "ACTIVE within seconds of quorum returning.",
+                    ),
+                ),
             )
         ]
     # > 1 active = split-brain symptom
@@ -142,6 +169,19 @@ def _check_active_instance(
             doc_refs=tuple(registry.lookup_topic("native_ha_quorum_lost", mq_version)),
             confidence="High",
             evidence={"actives": str(len(actives))},
+            remediation_steps=(
+                RemediationScenario(
+                    scenario="STOP client traffic, then engage IBM support",
+                    commands=(
+                        "# 1. Update upstream load balancer to drain traffic.",
+                        "# 2. Open IBM support case — Native HA split-brain.",
+                        "# 3. Do NOT manually elect — risk of data loss.",
+                    ),
+                    notes="⚠️ This is rare and dangerous. Two ACTIVE replicas means the "
+                    "quorum logic failed, possibly due to a network partition during "
+                    "a leader transition. Manual override risks unrecoverable data loss.",
+                ),
+            ),
         )
     ]
 
@@ -188,6 +228,26 @@ def _check_replicas(
                         "status": status or "UNKNOWN",
                         "insync": in_sync or "UNKNOWN",
                     },
+                    remediation_steps=(
+                        RemediationScenario(
+                            scenario="Restart the unhealthy replica pod",
+                            commands=(f"kubectl -n mq delete pod {name}",),
+                            notes=(
+                                "StatefulSet recreates it; INSYNC=YES returns "
+                                "once log replay completes."
+                            ),
+                        ),
+                        RemediationScenario(
+                            scenario="Inspect the replica's log for replication errors",
+                            commands=(
+                                f"kubectl -n mq logs {name} --tail=200 | grep -E 'AMQ32|AMQ30'",
+                            ),
+                            notes=(
+                                "Look for AMQ3209/AMQ3035 series — those name the "
+                                "underlying cause."
+                            ),
+                        ),
+                    ),
                 )
             )
     return findings
@@ -250,6 +310,19 @@ def _check_log_replay_lag(
                     "replay_pct": str(pct),
                     "backlog_bytes": str(backlog),
                 },
+                remediation_steps=(
+                    RemediationScenario(
+                        scenario="Increase IOPS on the lagging replica's storage",
+                        commands=(
+                            f"kubectl -n mq describe pod {name} | grep -A5 'Volumes:'",
+                            "# Then resize PVC (StorageClass must support it):",
+                            "kubectl -n mq patch pvc data-QM_NAME-1 -p \\\n"
+                            '  \'{"spec":{"resources":{"requests":{"storage":"200Gi"}}}}\'',
+                        ),
+                        notes="Persistent lag with low backlog often means IOPS-bound. "
+                        "Resize the PVC or migrate to a faster StorageClass.",
+                    ),
+                ),
             )
         )
     return findings
@@ -295,6 +368,28 @@ def _check_crr_lag(
                 "recovery_group": rg,
                 "role": role,
             },
+            remediation_steps=(
+                RemediationScenario(
+                    scenario="Investigate inter-region network bandwidth/latency",
+                    commands=(
+                        "# From the LIVE region, to the RECOVERY region's CRR endpoint:",
+                        "iperf3 -c recovery.region.example -t 30",
+                        "ping -c 100 recovery.region.example",
+                    ),
+                    notes="CRR throughput tracks available bandwidth. RTT > 50ms with sustained "
+                    "write load is a common cause of growing lag.",
+                ),
+                RemediationScenario(
+                    scenario="Verify recovery-group QMs are healthy",
+                    commands=(
+                        "# In the RECOVERY region:",
+                        "DISPLAY QMSTATUS",
+                        "DISPLAY NATIVEHASTATUS",
+                    ),
+                    notes="If the recovery side has its own replica issue, CRR lag will grow "
+                    "regardless of network.",
+                ),
+            ),
         )
     ]
 

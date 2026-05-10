@@ -162,21 +162,40 @@ banner "SCENE 3  ·  3 seconds later"
 claude_says "I see it. ${RED}${BOLD}HIGH${NC}: Channel ${CYAN}APP.SVRCONN${NC} returned MQRC ${RED}2035 NOT_AUTHORIZED${NC}."
 sleep "$PAUSE_SHORT"
 echo
-echo -e "${BOLD}Root cause:${NC}"
+echo -e "${BOLD}🔍 Root cause:${NC}"
 echo "  The connecting principal failed authorization. Common causes:"
 echo "  a CHLAUTH BLOCKUSER rule blocked the user, the resolved MCAUSER"
 echo "  lacks +connect/+inq on the QM, or CONNAUTH credentials failed."
 sleep "$PAUSE_MED"
 echo
-echo -e "${BOLD}Recommended investigation (read-only, run these yourself):${NC}"
-echo -e "  ${CYAN}DISPLAY CHLAUTH('APP.SVRCONN') ALL${NC}"
-echo -e "  ${CYAN}DISPLAY CHSTATUS('APP.SVRCONN') ALL${NC}"
-echo -e "  ${CYAN}DISPLAY QMGR CONNAUTH${NC}"
-echo -e "  ${CYAN}DISPLAY AUTHINFO(*) ALL${NC}"
+echo -e "${BOLD}🩺 Diagnostic checks (read-only — MQ-Sentinel already ran these):${NC}"
+echo -e "  ${CYAN}DISPLAY CHLAUTH('APP.SVRCONN') MATCH(RUNCHECK) ALL${NC}     ${DIM}# which rule matched?${NC}"
+echo -e "  ${CYAN}DISPLAY CHSTATUS('APP.SVRCONN') ALL${NC}                   ${DIM}# what MCAUSER resolved?${NC}"
+echo -e "  ${CYAN}DISPLAY QMGR CONNAUTH${NC}                                ${DIM}# which AUTHINFO is active?${NC}"
+echo -e "  ${CYAN}DISPLAY AUTHREC OBJTYPE(QMGR) PRINCIPAL('app-user')${NC}  ${DIM}# what's the user authorized for?${NC}"
 sleep "$PAUSE_MED"
 echo
-echo -e "${BOLD}IBM Knowledge Center:${NC}"
+echo -e "${BOLD}💡 IBM-recommended resolution (${YELLOW}you${NC}${BOLD} run these — MQ-Sentinel will NOT execute):${NC}"
+echo
+echo -e "  ${DIM}If a BLOCKUSER rule is incorrectly matching:${NC}"
+echo -e "    ${YELLOW}SET CHLAUTH('APP.SVRCONN') TYPE(BLOCKUSER) USERLIST('badactor') ACTION(REPLACE)${NC}"
+echo
+echo -e "  ${DIM}If MCAUSER lacks queue/QM permissions, grant them:${NC}"
+echo -e "    ${YELLOW}SET AUTHREC PRINCIPAL('mcauser') OBJTYPE(QMGR) AUTHADD(CONNECT, INQ)${NC}"
+echo -e "    ${YELLOW}SET AUTHREC PROFILE('PAYMENTS.IN') OBJTYPE(QUEUE) PRINCIPAL('mcauser') \\${NC}"
+echo -e "    ${YELLOW}            AUTHADD(PUT, INQ, BROWSE)${NC}"
+echo
+echo -e "  ${DIM}If CONNAUTH is rejecting credentials, fix the AUTHINFO record:${NC}"
+echo -e "    ${YELLOW}ALTER AUTHINFO('SYSTEM.DEFAULT.AUTHINFO.IDPWOS') AUTHTYPE(IDPWOS) \\${NC}"
+echo -e "    ${YELLOW}             ADOPTCTX(YES) CHCKCLNT(REQDADM)${NC}"
+echo -e "    ${YELLOW}REFRESH SECURITY TYPE(CONNAUTH)${NC}"
+sleep "$PAUSE_MED"
+echo
+echo -e "${BOLD}📖 IBM Knowledge Center (full procedure with all options):${NC}"
 echo -e "  ${BLUE}🔗 https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2035-07f3-rc2035-mqrc-not-authorized${NC}"
+echo
+echo -e "${GRAY}${DIM}⚠️  MQ-Sentinel is read-only by construction. The destructive commands above are${NC}"
+echo -e "${GRAY}${DIM}   shown as TEXT only — you copy/paste them into your change window after review.${NC}"
 sleep "$PAUSE_LONG"
 
 # ─── SCENE 4: SECURITY ───────────────────────────────────────────────────

@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from mq_sentinel.rcs.engine import RCSFinding, Severity
+from mq_sentinel.rcs.engine import RCSFinding, RemediationScenario, Severity
 from mq_sentinel.rcs.kc_registry import KCRegistry
 
 _AMQ_CODE = re.compile(r"\bAMQ\d{4}[A-Z]?\b")
@@ -120,7 +120,7 @@ def _finding_2035(
             "lacks +connect/+inq on the QM, or CONNAUTH credentials failed."
         ),
         fix_steps=(
-            f"DISPLAY CHLAUTH('{name}') ALL",
+            f"DISPLAY CHLAUTH('{name}') MATCH(RUNCHECK) ALL",
             f"DISPLAY CHSTATUS('{name}') ALL",
             "DISPLAY QMGR CONNAUTH",
             "DISPLAY AUTHINFO(*) ALL",
@@ -136,6 +136,34 @@ def _finding_2035(
             "status": str(ch.get("STATUS", "")),
             "rqmname": str(ch.get("RQMNAME", "")),
         },
+        remediation_steps=(
+            RemediationScenario(
+                scenario="CHLAUTH BLOCKUSER rule incorrectly matching",
+                commands=(
+                    f"SET CHLAUTH('{name}') TYPE(BLOCKUSER) USERLIST('badactor') ACTION(REPLACE)",
+                ),
+                notes="Replace the USERLIST with only the principals you actually want to block.",
+            ),
+            RemediationScenario(
+                scenario="MCAUSER lacks queue manager / queue permissions",
+                commands=(
+                    "SET AUTHREC PRINCIPAL('mcauser') OBJTYPE(QMGR) AUTHADD(CONNECT, INQ)",
+                    "SET AUTHREC PROFILE('destination.queue') OBJTYPE(QUEUE) "
+                    "PRINCIPAL('mcauser') AUTHADD(PUT, INQ, BROWSE)",
+                ),
+                notes="Replace 'mcauser' with the value returned by DISPLAY CHSTATUS MCAUSER, "
+                "and 'destination.queue' with the target.",
+            ),
+            RemediationScenario(
+                scenario="CONNAUTH credentials rejected (password / OS user)",
+                commands=(
+                    "ALTER AUTHINFO('SYSTEM.DEFAULT.AUTHINFO.IDPWOS') "
+                    "AUTHTYPE(IDPWOS) ADOPTCTX(YES) CHCKCLNT(REQDADM)",
+                    "REFRESH SECURITY TYPE(CONNAUTH)",
+                ),
+                notes="Then retry the client connection. Watch AMQERR for AMQ5540/AMQ5541.",
+            ),
+        ),
     )
 
 
@@ -167,6 +195,29 @@ def _finding_conn_error(
         doc_refs=tuple(refs),
         confidence="High",
         evidence={"channel": name, "status": str(ch.get("STATUS", ""))},
+        remediation_steps=(
+            RemediationScenario(
+                scenario="Remote listener not running",
+                commands=("START LISTENER(SYSTEM.DEFAULT.LISTENER.TCP)",),
+                notes="Run on the REMOTE QM. Replace listener name as configured.",
+            ),
+            RemediationScenario(
+                scenario="Channel needs restart after network repair",
+                commands=(f"START CHANNEL('{name}')",),
+                notes="Only after confirming connectivity to CONNAME on the channel's port.",
+            ),
+            RemediationScenario(
+                scenario="TLS CipherSpec mismatch",
+                commands=(
+                    f"ALTER CHANNEL('{name}') CHLTYPE(SDR) SSLCIPH('ANY_TLS13_OR_HIGHER')",
+                    "REFRESH SECURITY TYPE(SSL)",
+                    f"START CHANNEL('{name}')",
+                ),
+                notes="Both ends of the channel must use compatible CipherSpecs. "
+                "ANY_TLS13_OR_HIGHER is a safe modern default; pin a specific suite "
+                "if your policy requires.",
+            ),
+        ),
     )
 
 
@@ -181,15 +232,23 @@ def _finding_indoubt(name: str, ch: dict[str, Any]) -> RCSFinding:
             "automatically. Manual resolution is required after confirming the "
             "remote QM state."
         ),
-        fix_steps=(
-            f"DISPLAY CHSTATUS('{name}') ALL CURLUWID LSTLUWID",
-            # Resolution itself (RESOLVE CHANNEL) is intentionally NOT suggested;
-            # this MCP is read-only. The operator must run it manually.
-        ),
+        fix_steps=(f"DISPLAY CHSTATUS('{name}') ALL CURLUWID LSTLUWID",),
         verify_commands=(f"DISPLAY CHSTATUS('{name}') CURRENT",),
         doc_refs=(),
         confidence="Medium",
         evidence={"channel": name, "status": "INDOUBT"},
+        remediation_steps=(
+            RemediationScenario(
+                scenario="Resolve after confirming remote QM batch state",
+                commands=(f"RESOLVE CHANNEL('{name}') ACTION(COMMIT)",),
+                notes=(
+                    "⚠️ DANGER: Only after MANUALLY confirming on the remote QM "
+                    "whether the in-flight batch was committed. Choosing the wrong "
+                    "ACTION causes duplicate or lost messages. ACTION(BACKOUT) is "
+                    "the alternative. Engage your messaging team before running."
+                ),
+            ),
+        ),
     )
 
 
@@ -211,4 +270,16 @@ def _finding_generic_bad_status(name: str, ch: dict[str, Any], status: str) -> R
         doc_refs=(),
         confidence="Medium",
         evidence={"channel": name, "status": status},
+        remediation_steps=(
+            RemediationScenario(
+                scenario="Restart channel after addressing the underlying cause",
+                commands=(
+                    f"STOP CHANNEL('{name}') MODE(QUIESCE)",
+                    f"START CHANNEL('{name}')",
+                ),
+                notes="Use STOP MODE(QUIESCE) first to allow in-flight batches to complete. "
+                "Only restart after confirming why it entered this state — restarting "
+                "without root-cause fix usually reproduces the problem.",
+            ),
+        ),
     )

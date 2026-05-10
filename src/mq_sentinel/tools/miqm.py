@@ -58,8 +58,7 @@ def run_miqm_checks(
         raw_evidence={
             "instance_count": len(instances),
             "active_count": sum(
-                1 for i in instances
-                if str(i.get("instance_type", "")).upper() == "ACTIVE"
+                1 for i in instances if str(i.get("instance_type", "")).upper() == "ACTIVE"
             ),
             "standby_permitted": permitted,
         },

@@ -6,6 +6,96 @@ All notable changes to MQ-Sentinel are documented here. The format is loosely ba
 
 ---
 
+## [0.2.0] — 2026-05-03 — IBM-recommended remediation recipes
+
+This release turns MQ-Sentinel from a "what's wrong" diagnostic into a
+complete on-call SRE assistant. Every finding now carries IBM-recommended
+**fix commands** alongside the read-only diagnostic checks — returned as
+text only, never executed.
+
+### Added
+
+- **`RemediationScenario` dataclass** in `mq_sentinel.rcs.engine`. Each
+  finding can carry multiple scenario-specific fix recipes:
+  ```python
+  RemediationScenario(
+      scenario="CHLAUTH BLOCKUSER rule incorrectly matching",
+      commands=("SET CHLAUTH('APP.SVRCONN') TYPE(BLOCKUSER) ...",),
+      notes="Optional prerequisites / warnings / rollback guidance.",
+  )
+  ```
+- **`RCSFinding.remediation_steps`** field — `tuple[RemediationScenario, ...]`
+  populated by every matcher.
+- **`execution_policy` response field** on every finding —
+  machine-readable safety statement: "MQ-Sentinel never executes
+  remediation_steps. These are IBM-recommended fix commands returned as
+  TEXT only for the operator to review and run manually in a change
+  window. The MCP server is read-only by construction."
+- **All 8 matchers updated** with IBM-recommended remediation recipes
+  drawn from IBM Knowledge Center:
+  - Channels: 2035 (3 scenarios — BLOCKUSER, MCAUSER perms, CONNAUTH),
+    2009/2059 (listener restart, channel restart, TLS cipher), INDOUBT
+    (RESOLVE CHANNEL with strong data-loss warning), generic bad status.
+  - DLQ: 2035/2080/2030/2051/2053/2079 (one scenario each), depth
+    (runmqdlq + dmpmqmsg), backout loop (BOTHRESH/BOQNAME config).
+  - Cluster: partial repository, unhealthy cluster channel, stale
+    CLUSQMGR, suspended member, self-only membership.
+  - Native HA: quorum loss, no active, split-brain (IBM-support warning),
+    replica disconnected, log replay lag, CRR lag.
+  - RDQM: Pacemaker quorum, offline nodes, failed resources, DRBD
+    split-brain (**explicit data-loss warning + IBM-support-first
+    notice**), connection state, disk state, no running node.
+  - z/OS: QSG member, CHIN, page set expansion, buffer pool sizing, CF
+    structure recovery.
+  - MIQM: no active, dual-active (corruption warning), no standby
+    permission, shared FS, failover history.
+
+### Safety invariants (new tests)
+
+`tests/security/test_remediation_isolation.py` enforces three guarantees:
+
+1. **`remediation_steps` is never iterated outside the model layer.** A
+   source-code grep test fails CI if any non-engine, non-matcher file
+   accesses `.remediation_steps` (which would be the path to
+   execution).
+2. **Matchers never call connectors.** The matcher source files contain
+   no `connector.execute_mqsc`, `connector.execute_shell`, or
+   `connector.browse_dlq` references.
+3. **`fix_steps` ⊆ allowlist, `remediation_steps` ⊄ allowlist.** Every
+   `fix_steps` string passes `assert_mqsc_allowed`. Every
+   `remediation_steps` command (sample tested with `ALTER QMGR ...`)
+   is REJECTED by the allowlist — proving they would not execute even
+   if accidentally passed through.
+
+### Changed
+
+- `RCSFinding.as_dict()` now emits `remediation_steps` and
+  `execution_policy` fields. All MCP responses across stdio and HTTP
+  transports include them automatically.
+- Demo script (`demo/run.sh`) Scene 3 expanded to show the new format
+  with side-by-side diagnostic and remediation blocks, plus the
+  explicit safety footer.
+
+### Build status
+
+- 172 tests passing (5 new in `tests/security/test_remediation_isolation.py`).
+- `mypy --strict` clean across 50 source files.
+- `ruff` lint + format clean.
+
+### Why this matters
+
+Banks, healthcare, telcos already trust read-only diagnostics. With
+remediation recipes attached, **Tier-1 ops can resolve incidents
+without paging the MQ SME** — they have the diagnosis, the exact
+commands to type, the IBM doc citation, and a safe execution model
+(the MCP never runs the destructive commands).
+
+This is what closes the loop from "what's wrong?" to "how do I fix it?"
+— while preserving the read-only safety posture that got the product
+through InfoSec in the first place.
+
+---
+
 ## [0.1.0] — 2026-04-28 — Phase 1 complete
 
 First end-to-end release. Eight diagnostic tools covering every IBM MQ flavor in

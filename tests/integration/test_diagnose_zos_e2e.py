@@ -47,9 +47,9 @@ def test_zos_e2e() -> None:
     assert result["tool"] == "diagnose_zos_qsg_issues"
     issues = [f["issue"] for f in result["findings"]]
 
-    assert any("MQA3" in i for i in issues), issues       # inactive QSG member
+    assert any("MQA3" in i for i in issues), issues  # inactive QSG member
     assert any("Channel initiator" in i for i in issues), issues  # CHIN STOPPED
-    assert any("Page set 2" in i for i in issues), issues # PSID 2 at 97%
+    assert any("Page set 2" in i for i in issues), issues  # PSID 2 at 97%
     assert any("Buffer pool 1" in i for i in issues), issues
     assert any("APPLICATION2" in i for i in issues), issues  # CF FAILED
 

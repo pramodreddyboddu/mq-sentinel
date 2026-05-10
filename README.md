@@ -6,10 +6,10 @@ Root cause + recommended fix steps + IBM Knowledge Center citations — for ever
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![mypy strict](https://img.shields.io/badge/mypy-strict-success.svg)](https://mypy.readthedocs.io/)
 [![ruff](https://img.shields.io/badge/lint-ruff-orange.svg)](https://docs.astral.sh/ruff/)
-[![tests 167 passing](https://img.shields.io/badge/tests-167%20passing-success.svg)]()
+[![tests 172 passing](https://img.shields.io/badge/tests-172%20passing-success.svg)]()
 [![License Proprietary](https://img.shields.io/badge/license-proprietary-red.svg)](LICENSE)
 
-> Status: **0.1.0 — Phase 1 complete.** Eight diagnostic tools across all ten IBM MQ flavors. stdio + HTTPS+OIDC transports. See [CHANGELOG](CHANGELOG.md).
+> Status: **0.2.0 — IBM-recommended remediation recipes.** Eight diagnostic tools across all ten IBM MQ flavors. stdio + HTTPS+OIDC transports. Every finding now carries **scenario-specific fix commands from IBM Knowledge Center**, returned as text only — never executed. See [CHANGELOG](CHANGELOG.md).
 
 ---
 

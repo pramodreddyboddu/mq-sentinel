@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from mq_sentinel.rcs.engine import RCSFinding, Severity
+from mq_sentinel.rcs.engine import RCSFinding, RemediationScenario, Severity
 from mq_sentinel.rcs.kc_registry import KCRegistry
 
 _AMQ_FAILOVER_RE = re.compile(r"\bAMQ7228\b|\bAMQ7230\b|\bAMQ7232\b")
@@ -57,8 +57,7 @@ def _check_no_active(
     if not instances:
         return []
     actives = [
-        i for i in instances
-        if str(i.get("instance_type", i.get("role", ""))).upper() == "ACTIVE"
+        i for i in instances if str(i.get("instance_type", i.get("role", ""))).upper() == "ACTIVE"
     ]
     if actives:
         return []
@@ -78,6 +77,18 @@ def _check_no_active(
             doc_refs=tuple(registry.lookup_topic("miqm_troubleshooting", mq_version)),
             confidence="High",
             evidence={"total_instances": str(len(instances))},
+            remediation_steps=(
+                RemediationScenario(
+                    scenario="Start the QM with standby permitted",
+                    commands=(
+                        "# On the primary host:",
+                        "strmqm -x QM_NAME",
+                        "# On the standby host (after primary is up):",
+                        "strmqm -x QM_NAME",
+                    ),
+                    notes="-x enables standby. Confirm shared FS is mounted on both hosts first.",
+                ),
+            ),
         )
     ]
 
@@ -106,6 +117,17 @@ def _check_standby_permission(
             doc_refs=tuple(registry.lookup_topic("miqm_overview", mq_version)),
             confidence="High",
             evidence={"standby_permitted": "false"},
+            remediation_steps=(
+                RemediationScenario(
+                    scenario="Restart the QM with -x to permit standby",
+                    commands=(
+                        "endmqm -i QM_NAME",
+                        "strmqm -x QM_NAME",
+                    ),
+                    notes="endmqm -i is immediate shutdown; coordinate with applications. "
+                    "Then start the standby on the other host: strmqm -x QM_NAME",
+                ),
+            ),
         )
     ]
 
@@ -116,8 +138,7 @@ def _check_dual_active(
     mq_version: str | None,
 ) -> list[RCSFinding]:
     actives = [
-        i for i in instances
-        if str(i.get("instance_type", i.get("role", ""))).upper() == "ACTIVE"
+        i for i in instances if str(i.get("instance_type", i.get("role", ""))).upper() == "ACTIVE"
     ]
     if len(actives) <= 1:
         return []
@@ -139,6 +160,20 @@ def _check_dual_active(
             doc_refs=tuple(registry.lookup_topic("miqm_troubleshooting", mq_version)),
             confidence="High",
             evidence={"active_count": str(len(actives)), "hosts": hosts},
+            remediation_steps=(
+                RemediationScenario(
+                    scenario="STOP traffic, identify rogue, end one instance",
+                    commands=(
+                        "# 1. Drain upstream load balancer / VIP.",
+                        "# 2. On the rogue host (NOT the legitimate active):",
+                        "endmqm -i QM_NAME",
+                        "# 3. Confirm only ONE instance is active:",
+                        "dspmq -x",
+                    ),
+                    notes="⚠️ Risk of corruption — engage IBM Support. The shared FS lock should "
+                    "prevent this; if it didn't, the FS is misconfigured (NFS lease, GPFS quorum).",
+                ),
+            ),
         )
     ]
 
@@ -168,6 +203,19 @@ def _check_shared_fs(
             doc_refs=tuple(registry.lookup_topic("miqm_troubleshooting", mq_version)),
             confidence="Medium",
             evidence={"path": path},
+            remediation_steps=(
+                RemediationScenario(
+                    scenario="Verify shared filesystem mount and lock semantics",
+                    commands=(
+                        "# On EACH host:",
+                        f"mount | grep '{path}'",
+                        f"touch {path}/.miqm-write-test && rm {path}/.miqm-write-test",
+                        "# NFSv4 lease must be < 90s; GPFS quorum must be intact.",
+                    ),
+                    notes="MIQM requires posix file locks. NFSv3 'soft' mounts break this. "
+                    "Use NFSv4 with 'hard,intr' or GPFS.",
+                ),
+            ),
         )
     ]
 
@@ -196,5 +244,16 @@ def _check_failover_history(
             doc_refs=tuple(registry.lookup_topic("miqm_troubleshooting", mq_version)),
             confidence="Medium",
             evidence={"failover_events": str(len(matches))},
+            remediation_steps=(
+                RemediationScenario(
+                    scenario="Investigate the trigger in AMQERR.LOG",
+                    commands=(
+                        "# Read recent AMQERR for context (read-only, safe):",
+                        "tail -200 /var/mqm/qmgrs/QM_NAME/errors/AMQERR01.LOG",
+                    ),
+                    notes="Frequent failovers point to flaky network or shared-FS leases. "
+                    "Isolated events are usually benign (planned maintenance).",
+                ),
+            ),
         )
     ]

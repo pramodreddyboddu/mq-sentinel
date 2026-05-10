@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from mq_sentinel.rcs.engine import RCSFinding, Severity
+from mq_sentinel.rcs.engine import RCSFinding, RemediationScenario, Severity
 from mq_sentinel.rcs.kc_registry import KCRegistry
 
 _BAD_DRBD_CONN = {"WFConnection", "StandAlone", "Disconnecting", "Unconnected", "Timeout"}
@@ -107,6 +107,26 @@ def _check_pacemaker_quorum(
                 "total": str(total),
                 "required": str(required),
             },
+            remediation_steps=(
+                RemediationScenario(
+                    scenario="Bring offline nodes back online (run ON the offline host)",
+                    commands=(
+                        "systemctl status pacemaker corosync",
+                        "systemctl start corosync",
+                        "systemctl start pacemaker",
+                    ),
+                    notes="Quorum returns once a majority of nodes reach the same view.",
+                ),
+                RemediationScenario(
+                    scenario="Fencing devices are misconfigured",
+                    commands=(
+                        "pcs stonith status",
+                        "pcs stonith cleanup",
+                    ),
+                    notes="Stuck STONITH operations prevent recovery. Engage your platform "
+                    "team if cleanup doesn't help.",
+                ),
+            ),
         )
     ]
 
@@ -137,6 +157,17 @@ def _check_offline_nodes(
             doc_refs=tuple(registry.lookup_topic("rdqm_pacemaker", mq_version)),
             confidence="High",
             evidence={"offline": ",".join(offline)},
+            remediation_steps=(
+                RemediationScenario(
+                    scenario="Restore the offline node (run ON each offline host)",
+                    commands=(
+                        "systemctl start corosync",
+                        "systemctl start pacemaker",
+                        "crm_mon -1",
+                    ),
+                    notes="If the host itself is unreachable, escalate to platform/network team.",
+                ),
+            ),
         )
     ]
 
@@ -171,6 +202,17 @@ def _check_failed_resources(
                 doc_refs=tuple(registry.lookup_topic("rdqm_troubleshooting", mq_version)),
                 confidence="Medium",
                 evidence={"resource": resource, "node": node, "status": status},
+                remediation_steps=(
+                    RemediationScenario(
+                        scenario="Clean up the failed resource after fixing root cause",
+                        commands=(
+                            f"pcs resource cleanup {resource}",
+                            "crm_mon -1",
+                        ),
+                        notes="cleanup retries the resource. If it fails again, the underlying "
+                        "service (RDQM agent / filesystem / VIP / DRBD) still has an issue.",
+                    ),
+                ),
             )
         )
     return findings
@@ -204,6 +246,26 @@ def _check_drbd_split_brain(
                 doc_refs=tuple(registry.lookup_topic("rdqm_split_brain", mq_version)),
                 confidence="High",
                 evidence={"resource": name},
+                remediation_steps=(
+                    RemediationScenario(
+                        scenario=("Resolve split-brain — IRREVERSIBLE, IBM SUPPORT FIRST"),
+                        commands=(
+                            "# Step 1: identify the VICTIM (side whose data you DISCARD).",
+                            "#   This is a business decision — DO NOT pick automatically.",
+                            "# Step 2: On the VICTIM node:",
+                            f"drbdadm disconnect {name}",
+                            f"drbdadm secondary {name}",
+                            f"drbdadm -- --discard-my-data connect {name}",
+                            "# Step 3: On the SURVIVOR node:",
+                            f"drbdadm connect {name}",
+                        ),
+                        notes=(
+                            "⚠️ DATA LOSS WARNING: --discard-my-data PERMANENTLY DISCARDS "
+                            "the victim's data since divergence. Engage IBM Support and "
+                            "your DR runbook owner before running. There is no undo."
+                        ),
+                    ),
+                ),
             )
         )
     return findings
@@ -255,6 +317,17 @@ def _check_drbd_connection(
                 doc_refs=tuple(registry.lookup_topic("rdqm_troubleshooting", mq_version)),
                 confidence="Medium",
                 evidence={"resource": name, "connection_state": conn},
+                remediation_steps=(
+                    RemediationScenario(
+                        scenario="Reconnect after fixing network/firewall",
+                        commands=(
+                            f"drbdadm connect {name}",
+                            f"drbdadm status {name}",
+                        ),
+                        notes="DRBD ports default to 7788+ per resource. Confirm both "
+                        "iptables/firewalld and any inter-node ACLs allow them.",
+                    ),
+                ),
             )
         )
     return findings
@@ -293,6 +366,17 @@ def _check_drbd_disk_state(
                     doc_refs=tuple(registry.lookup_topic("rdqm_troubleshooting", mq_version)),
                     confidence="High",
                     evidence={"resource": name, "side": who, "state": state},
+                    remediation_steps=(
+                        RemediationScenario(
+                            scenario="Wait for resync from a healthy peer",
+                            commands=(
+                                f"drbdadm status {name}",
+                                "# Watch 'replication:SyncTarget' progress.",
+                            ),
+                            notes="⚠️ Do NOT manually promote the Inconsistent side — risk of data "
+                            "loss. Let DRBD resync from a peer that is UpToDate.",
+                        ),
+                    ),
                 )
             )
     return findings
@@ -327,5 +411,24 @@ def _check_rdqm_no_running_node(
             doc_refs=tuple(registry.lookup_topic("rdqm_overview", mq_version)),
             confidence="Medium",
             evidence={"qm_name": qm, "ha_state": ha_state},
+            remediation_steps=(
+                RemediationScenario(
+                    scenario="Move the QM to the preferred node",
+                    commands=(
+                        f"pcs resource move {qm}-master rdqm-1",
+                        "crm_mon -1",
+                    ),
+                    notes="Replace 'rdqm-1' with your preferred host. Pacemaker also "
+                    "needs DRBD UpToDate on the target.",
+                ),
+                RemediationScenario(
+                    scenario="Restart the resource group after fixing root cause",
+                    commands=(
+                        f"pcs resource cleanup {qm}-master",
+                        f"pcs resource cleanup {qm}-slave",
+                    ),
+                    notes="Cleanup clears Pacemaker's failure history and retries.",
+                ),
+            ),
         )
     ]

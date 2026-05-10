@@ -76,8 +76,20 @@ def test_fix_steps_read_only() -> None:
     for f in match_miqm_findings(raw, KCRegistry()):
         for step in f.fix_steps:
             for verb in (
-                "endmqm", "strmqm", "dltmqm", "crtmqm",
-                "ALTER ", "DELETE ", "DEFINE ", "REFRESH ", "RESET ",
-                "CLEAR ", "SET ", "MOVE ", "START ", "STOP ", "FAILOVER ",
+                "endmqm",
+                "strmqm",
+                "dltmqm",
+                "crtmqm",
+                "ALTER ",
+                "DELETE ",
+                "DEFINE ",
+                "REFRESH ",
+                "RESET ",
+                "CLEAR ",
+                "SET ",
+                "MOVE ",
+                "START ",
+                "STOP ",
+                "FAILOVER ",
             ):
                 assert verb.lower() not in step.lower(), f"destructive verb in: {step}"

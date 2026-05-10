@@ -13,7 +13,7 @@ from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from mq_sentinel.rcs.engine import RCSFinding, Severity
+from mq_sentinel.rcs.engine import RCSFinding, RemediationScenario, Severity
 from mq_sentinel.rcs.kc_registry import KCRegistry
 
 _STALE_DAYS = 7
@@ -101,6 +101,22 @@ def _check_full_repos(
                         "members_visible": str(len(members)),
                         "full_repos_visible": "0",
                     },
+                    remediation_steps=(
+                        RemediationScenario(
+                            scenario="This QM should be a full repository for the cluster",
+                            commands=(f"ALTER QMGR REPOS('{cluster}')",),
+                            notes="A cluster must have at least 1 (ideally 2) full repositories.",
+                        ),
+                        RemediationScenario(
+                            scenario="A different QM should be the full repo — restart its CLUSSDR",
+                            commands=("START CHANNEL('TO.REMOTE_FULL_REPO')",),
+                            notes=(
+                                "Replace channel name with the CLUSSDR pointing to the "
+                                "configured full repository. Confirm with "
+                                "DISPLAY CHANNEL(*) CHLTYPE(CLUSSDR)."
+                            ),
+                        ),
+                    ),
                 )
             )
     return findings
@@ -144,6 +160,25 @@ def _check_unhealthy_channels(
                         "conname": conname,
                         "status": status,
                     },
+                    remediation_steps=(
+                        RemediationScenario(
+                            scenario="Channel needs restart after network repair",
+                            commands=(
+                                f"STOP CHANNEL('{channel}') MODE(QUIESCE)",
+                                f"START CHANNEL('{channel}')",
+                            ),
+                            notes="Only after confirming connectivity to the remote CONNAME.",
+                        ),
+                        RemediationScenario(
+                            scenario="Sequence numbers desynced (last resort)",
+                            commands=(
+                                f"RESET CHANNEL('{channel}') SEQNUM(1)",
+                                f"START CHANNEL('{channel}')",
+                            ),
+                            notes="⚠️ RESET can cause duplicate messages. Only after coordinating "
+                            "with the remote QM owner.",
+                        ),
+                    ),
                 )
             )
     return findings
@@ -197,6 +232,15 @@ def _check_stale_entries(
                     "last_update": clusdate,
                     "age_days": str(age_days),
                 },
+                remediation_steps=(
+                    RemediationScenario(
+                        scenario="Refresh cluster state after fixing the underlying channel",
+                        commands=(f"REFRESH CLUSTER('{cluster}') REPOS(YES)",),
+                        notes="⚠️ REFRESH CLUSTER is intrusive and triggers a full re-sync. "
+                        "Schedule in a maintenance window. REPOS(YES) re-resolves "
+                        "repository data without touching application objects.",
+                    ),
+                ),
             )
         )
     return findings
@@ -224,6 +268,14 @@ def _check_suspended_members(rows: list[dict[str, Any]]) -> list[RCSFinding]:
                     doc_refs=(),
                     confidence="Medium",
                     evidence={"clusqmgr": name, "cluster": cluster},
+                    remediation_steps=(
+                        RemediationScenario(
+                            scenario="Member should return to active service",
+                            commands=(f"RESUME QMGR CLUSTER('{cluster}')",),
+                            notes="Run on the SUSPENDED QM. Confirm with team it's no "
+                            "longer in maintenance.",
+                        ),
+                    ),
                 )
             )
     return findings
@@ -255,6 +307,14 @@ def _check_self_only_membership(rows: list[dict[str, Any]], this_qm: str) -> lis
             doc_refs=(),
             confidence="Medium",
             evidence={"this_qm": this_qm, "members_visible": "1"},
+            remediation_steps=(
+                RemediationScenario(
+                    scenario="Start the cluster-sender channel to the full repository",
+                    commands=("START CHANNEL('TO.FULL_REPO_QM')",),
+                    notes="Replace channel name with your configured CLUSSDR. "
+                    "Confirm CONNAME is reachable first.",
+                ),
+            ),
         )
     ]
 

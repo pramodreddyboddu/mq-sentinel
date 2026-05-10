@@ -10,7 +10,7 @@ from collections import Counter, defaultdict
 from typing import Any
 
 from mq_sentinel.connectors.base import DLQHeader
-from mq_sentinel.rcs.engine import RCSFinding, Severity
+from mq_sentinel.rcs.engine import RCSFinding, RemediationScenario, Severity
 from mq_sentinel.rcs.kc_registry import KCRegistry
 
 # Severity per reason code. Conservative — bias toward HIGH on auth and full-Q
@@ -107,6 +107,26 @@ def _finding_dlq_depth(queue_name: str, depth: int, sample: int) -> RCSFinding:
         doc_refs=(),
         confidence="High",
         evidence={"queue_name": queue_name, "queue_depth": str(depth), "sample_size": str(sample)},
+        remediation_steps=(
+            RemediationScenario(
+                scenario="Drain processed messages back to their destinations",
+                commands=(
+                    "# Use IBM-supplied runmqdlq with a curated rules table:",
+                    "runmqdlq SYSTEM.DEAD.LETTER.QUEUE QM_NAME < /etc/mqm/dlq.rules",
+                ),
+                notes="Configure /etc/mqm/dlq.rules per IBM KC 'Sample DLQ handler rules table'. "
+                "Test the rules in a non-prod QM first — destructive consume.",
+            ),
+            RemediationScenario(
+                scenario="Move messages off DLQ for manual inspection",
+                commands=(
+                    "# Browse-only sample (does NOT delete):",
+                    f"dmpmqmsg -m QM_NAME -i {queue_name} -f /tmp/dlq.dump -k 0 -K 50",
+                ),
+                notes="Read-only browse; safe to run. After inspection, decide whether to "
+                "requeue via runmqdlq or accept loss with CLEAR.",
+            ),
+        ),
     )
 
 
@@ -127,6 +147,7 @@ def _finding_for_reason(
 
     fix_steps = _fix_steps_for_reason(reason, dest_counts.most_common(1))
 
+    top_dest_name = dest_counts.most_common(1)[0][0] if dest_counts else "<destination>"
     return RCSFinding(
         issue=f"DLQ contains {len(group)} message(s) with reason {reason}",
         severity=severity,
@@ -143,7 +164,81 @@ def _finding_for_reason(
             "top_destinations": top_dest,
             "top_applications": top_apps,
         },
+        remediation_steps=_remediation_for_reason(reason, top_dest_name),
     )
+
+
+def _remediation_for_reason(reason: int, dest: str) -> tuple[RemediationScenario, ...]:
+    """IBM-recommended fix recipes per DLQ reason code."""
+    if reason == 2035:
+        return (
+            RemediationScenario(
+                scenario="Grant putter the required permission on the destination queue",
+                commands=(
+                    f"SET AUTHREC PROFILE('{dest}') OBJTYPE(QUEUE) "
+                    "PRINCIPAL('putter-user') AUTHADD(PUT, INQ)",
+                ),
+                notes="Replace 'putter-user' with the actual MCAUSER from the originating channel.",
+            ),
+        )
+    if reason == 2080:
+        return (
+            RemediationScenario(
+                scenario="Fix consumer buffer sizing (application change)",
+                commands=(
+                    "# No MQSC command — update the consumer to size its buffer to MAXMSGL.",
+                ),
+                notes="Application must call MQGET with a buffer >= queue MAXMSGL, or accept "
+                "truncation with MQGMO_ACCEPT_TRUNCATED_MSG.",
+            ),
+        )
+    if reason == 2030:
+        return (
+            RemediationScenario(
+                scenario="Increase destination queue MAXMSGL",
+                commands=(f"ALTER QLOCAL('{dest}') MAXMSGL(4194304)",),
+                notes="4 MiB is the typical max. Channel MAXMSGL on inbound channels must "
+                "also be >= this value: ALTER CHANNEL('...') MAXMSGL(...).",
+            ),
+            RemediationScenario(
+                scenario="Increase QMGR MAXMSGL if multiple queues need higher limits",
+                commands=("ALTER QMGR MAXMSGL(104857600)",),
+                notes="100 MiB QMGR max. Set per-queue MAXMSGL appropriately afterwards.",
+            ),
+        )
+    if reason == 2051:
+        return (
+            RemediationScenario(
+                scenario="Re-enable PUT on the destination queue",
+                commands=(f"ALTER QLOCAL('{dest}') PUT(ENABLED)",),
+                notes="Only if disabling PUT was unintentional. Confirm with the team that "
+                "owns the queue first.",
+            ),
+        )
+    if reason == 2053:
+        return (
+            RemediationScenario(
+                scenario="Drain the destination queue (consumer-side fix)",
+                commands=(f"DISPLAY QSTATUS('{dest}') IPPROCS OPPROCS LGETDATE LGETTIME",),
+                notes="If no consumer running (OPPROCS=0), start it. If consumer is slow, "
+                "scale it. This is operational, not an MQSC fix.",
+            ),
+            RemediationScenario(
+                scenario="Increase MAXDEPTH if it was undersized",
+                commands=(f"ALTER QLOCAL('{dest}') MAXDEPTH(50000)",),
+                notes="Use sparingly — large MAXDEPTH masks consumer-throughput problems.",
+            ),
+        )
+    if reason == 2079:
+        return (
+            RemediationScenario(
+                scenario="Fix consumer buffer sizing or accept truncation explicitly",
+                commands=("# Application change — see MQGET with MQGMO_ACCEPT_TRUNCATED_MSG.",),
+                notes="This reason means truncation succeeded but flagged. Either size the "
+                "buffer properly or remove the MQGMO_FAIL_IF_QUIESCING / accept flag.",
+            ),
+        )
+    return ()
 
 
 def _root_cause_for_reason(reason: int, top_dest: str, top_apps: str) -> str:
@@ -223,6 +318,23 @@ def _finding_backout_loop(queue_name: str, headers: list[dict[str, Any]]) -> RCS
             "high_backout_count": str(len(headers)),
             "top_destinations": top,
         },
+        remediation_steps=(
+            RemediationScenario(
+                scenario="Configure source-queue backout handling",
+                commands=(
+                    "ALTER QLOCAL('source.queue') BOTHRESH(5) BOQNAME('source.queue.BOQ')",
+                    "DEFINE QLOCAL('source.queue.BOQ') REPLACE",
+                ),
+                notes="Replace 'source.queue' with the queue producing poison messages. "
+                "BOTHRESH=5 is conservative; tune to your retry policy. After this, "
+                "MQ routes the poison to the BOQ instead of looping on the source.",
+            ),
+            RemediationScenario(
+                scenario="Inspect poison message headers manually",
+                commands=(f"dmpmqmsg -m QM_NAME -i {queue_name} -f /tmp/poison.dump -k 0 -K 10",),
+                notes="Browse-only. Look for malformed payloads, schema drift, or auth tokens.",
+            ),
+        ),
     )
 
 

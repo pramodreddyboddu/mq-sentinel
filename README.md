@@ -6,10 +6,10 @@ Root cause + recommended fix steps + IBM Knowledge Center citations — for ever
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
 [![mypy strict](https://img.shields.io/badge/mypy-strict-success.svg)](https://mypy.readthedocs.io/)
 [![ruff](https://img.shields.io/badge/lint-ruff-orange.svg)](https://docs.astral.sh/ruff/)
-[![tests 172 passing](https://img.shields.io/badge/tests-172%20passing-success.svg)]()
+[![tests 271 passing](https://img.shields.io/badge/tests-271%20passing-success.svg)]()
 [![License Proprietary](https://img.shields.io/badge/license-proprietary-red.svg)](LICENSE)
 
-> Status: **0.2.0 — IBM-recommended remediation recipes.** Eight diagnostic tools across all ten IBM MQ flavors. stdio + HTTPS+OIDC transports. Every finding now carries **scenario-specific fix commands from IBM Knowledge Center**, returned as text only — never executed. See [CHANGELOG](CHANGELOG.md).
+> Status: **0.3.0 — verified-citation knowledge base.** Eight diagnostic tools across all ten IBM MQ flavors. stdio + HTTPS+OIDC transports. Every finding carries scenario-specific fix commands from IBM Knowledge Center (text only — never executed), and **every IBM doc URL is verified live in CI** so a citation can never 404 on a customer. See [CHANGELOG](CHANGELOG.md).
 
 ---
 
@@ -44,7 +44,7 @@ The MCP itself never calls an LLM and never invents a fix — it pattern-matches
 
 - **Read-only always.** Static MQSC allowlist (`DISPLAY` / `DIS` / `PING CHANNEL` only). Destructive verbs are rejected by three layers: tool, connector, MQ-side `setmqaut`.
 - **Prompt-injection firewall.** Every MQ-sourced string is sanitized (control chars, zero-width, ANSI, unicode tag chars, jailbreak markers) and wrapped in a quarantine envelope before leaving the server.
-- **URL allowlist.** Responses may only cite `www.ibm.com`; all other URLs are redacted.
+- **URL allowlist + live verification.** Responses may only cite `www.ibm.com`; all other URLs are redacted. Every citation in the registry (20+ reason codes, 8 AMQ codes, 18 topic pages) is fetched daily in CI — a dead link fails the build, not the customer.
 - **Tamper-evident audit log.** Hash-chained JSONL; `mq-sentinel verify-audit` detects any retroactive edit.
 - **OIDC + RBAC.** Principals scoped to `nonprod-read` / `prod-read` / `admin-audit`. Cannot query prod QMs from a nonprod token.
 - **Hardened runtime.** Distroless image, non-root, read-only FS, dropped capabilities, seccomp, network egress allowlist.

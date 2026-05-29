@@ -76,6 +76,108 @@ class KCRegistry:
                     mq_versions=("9.2", "9.3", "9.4"),
                 ),
             ],
+            # --- Connectivity / availability (the most common on-call pages) ---
+            2009: [
+                KCDocRef(
+                    title="2009 (07D9) MQRC_CONNECTION_BROKEN",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2009-07d9-rc2009-mqrc-connection-broken",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            2058: [
+                KCDocRef(
+                    title="2058 (080A) MQRC_Q_MGR_NAME_ERROR",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2058-080a-rc2058-mqrc-q-mgr-name-error",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            2059: [
+                KCDocRef(
+                    title="2059 (080B) MQRC_Q_MGR_NOT_AVAILABLE",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2059-080b-rc2059-mqrc-q-mgr-not-available",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            2161: [
+                KCDocRef(
+                    title="2161 (0871) MQRC_Q_MGR_QUIESCING",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2161-0871-rc2161-mqrc-q-mgr-quiescing",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            2162: [
+                KCDocRef(
+                    title="2162 (0872) MQRC_Q_MGR_STOPPING",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2162-0872-rc2162-mqrc-q-mgr-stopping",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            # --- Object resolution ---
+            2085: [
+                KCDocRef(
+                    title="2085 (0825) MQRC_UNKNOWN_OBJECT_NAME",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2085-0825-rc2085-mqrc-unknown-object-name",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            2087: [
+                KCDocRef(
+                    title="2087 (0827) MQRC_UNKNOWN_REMOTE_Q_MGR",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2087-0827-rc2087-mqrc-unknown-remote-q-mgr",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            2189: [
+                KCDocRef(
+                    title="2189 (088D) MQRC_CLUSTER_RESOLUTION_ERROR",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2189-088d-rc2189-mqrc-cluster-resolution-error",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            # --- Inhibited / capacity ---
+            2016: [
+                KCDocRef(
+                    title="2016 (07E0) MQRC_GET_INHIBITED",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2016-07e0-rc2016-mqrc-get-inhibited",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            2192: [
+                KCDocRef(
+                    title="2192 (0890) MQRC_PAGESET_FULL (STORAGE_MEDIUM_FULL)",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2192-0890-rc2192-mqrc-storage-medium-full",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            2042: [
+                KCDocRef(
+                    title="2042 (07FA) MQRC_OBJECT_IN_USE",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2042-07fa-rc2042-mqrc-object-in-use",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            # --- TLS / security ---
+            2393: [
+                KCDocRef(
+                    title="2393 (0959) MQRC_SSL_INITIALIZATION_ERROR",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2393-0959-rc2393-mqrc-ssl-initialization-error",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            2397: [
+                KCDocRef(
+                    title="2397 (095D) MQRC_JSSE_ERROR",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2397-095d-rc2397-mqrc-jsse-error",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
+            2400: [
+                KCDocRef(
+                    title="2400 (0960) MQRC_UNSUPPORTED_CIPHER_SUITE",
+                    url="https://www.ibm.com/docs/en/ibm-mq/9.4?topic=codes-2400-0960-rc2400-mqrc-unsupported-cipher-suite",
+                    mq_versions=("9.2", "9.3", "9.4"),
+                ),
+            ],
         }
         self._by_amq: dict[str, list[KCDocRef]] = {
             "AMQ9202": [
@@ -275,6 +377,26 @@ class KCRegistry:
     def lookup_topic(self, topic: str, mq_version: str | None = None) -> list[KCDocRef]:
         refs = self._topics.get(topic, [])
         return self._filter_version(refs, mq_version)
+
+    def all_refs(self) -> list[KCDocRef]:
+        """Every KCDocRef in the registry, de-duplicated by URL.
+
+        Used by the dead-link verification job and structural-validity tests.
+        """
+        seen: dict[str, KCDocRef] = {}
+        for bucket in (self._by_reason, self._by_amq, self._topics):
+            for refs in bucket.values():
+                for ref in refs:
+                    seen.setdefault(ref.url, ref)
+        return list(seen.values())
+
+    def reason_codes(self) -> list[int]:
+        """Sorted list of every reason code covered."""
+        return sorted(self._by_reason)
+
+    def amq_codes(self) -> list[str]:
+        """Sorted list of every AMQ message code covered."""
+        return sorted(self._by_amq)
 
     @staticmethod
     def _filter_version(refs: list[KCDocRef], version: str | None) -> list[KCDocRef]:

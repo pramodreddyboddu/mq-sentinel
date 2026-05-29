@@ -1,0 +1,23 @@
+name: verify-kc-links
+
+# Every IBM Knowledge Center URL we cite must resolve. IBM reorganizes docs
+# periodically; this catches a dead link within a day instead of via an angry
+# customer. Network-dependent, so it's a scheduled job — NOT a PR gate.
+
+on:
+  schedule:
+    - cron: "0 7 * * *" # daily 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync --extra dev
+      - name: Verify every KC URL resolves
+        run: uv run python scripts/verify_kc_links.py

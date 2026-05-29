@@ -6,6 +6,52 @@ All notable changes to MQ-Sentinel are documented here. The format is loosely ba
 
 ---
 
+## [0.3.0] — 2026-05-04 — verified-citation knowledge base
+
+Expands the Knowledge Center coverage that is MQ-Sentinel's real moat, and
+adds infrastructure guaranteeing every IBM citation stays live.
+
+### Added
+
+- **16 new reason codes** in the KC registry, covering the most common
+  on-call pages: connectivity/availability (2009, 2058, 2059, 2161, 2162),
+  object resolution (2085, 2087, 2189), inhibited/capacity (2016, 2192, 2042),
+  and TLS/security (2393, 2397, 2400). Registry now covers 23 reason codes,
+  8 AMQ codes, and 18 topic pages.
+- **`KCRegistry.all_refs()` / `.reason_codes()` / `.amq_codes()`** —
+  enumeration accessors used by the link checker and structural tests.
+- **`scripts/verify_kc_links.py`** — fetches every URL in the registry
+  (concurrently, with soft-404 body detection) and exits non-zero on any
+  dead link. `--json` for machine-readable output.
+- **`.github/workflows/verify-kc-links.yml`** — runs the link checker daily
+  (07:00 UTC) and on demand. Network-dependent, so it's a scheduled job, not
+  a PR gate. Catches IBM doc reorganizations within a day.
+- **`tests/unit/test_kc_registry_structure.py`** — offline structural
+  validation that runs on every PR: every URL is `https://www.ibm.com/...`,
+  reason-code slugs encode the same code they're keyed under (catches
+  copy-paste errors like keying 2059 to the 2058 slug), AMQ slugs match
+  their code, no duplicate URLs, and a coverage floor (≥20 reason codes,
+  ≥7 AMQ codes) so a regression that drops codes fails CI.
+
+### Verified
+
+- All 47 registry URLs returned HTTP 200 at release time
+  (`uv run python scripts/verify_kc_links.py`).
+
+### Build status
+
+- 271 tests passing (99 new — mostly the parametrized structural checks).
+- `mypy --strict` clean. `ruff` lint + format clean.
+
+### Why this matters
+
+The entire trust story is "every recommendation cites IBM." A single 404 in
+front of an IBM admin undermines the whole tool. This release makes a broken
+citation a CI failure instead of a lost customer — and roughly triples the
+reason-code coverage in the process.
+
+---
+
 ## [0.2.0] — 2026-05-03 — IBM-recommended remediation recipes
 
 This release turns MQ-Sentinel from a "what's wrong" diagnostic into a

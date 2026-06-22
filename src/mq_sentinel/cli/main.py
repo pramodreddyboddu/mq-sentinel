@@ -1,4 +1,4 @@
-"""MQ-Sentinel CLI — control plane commands (serve, verify-audit, version)."""
+"""MQ-Sentinel CLI — control plane commands (serve, verify-audit, version, doctor, tools, info)."""
 
 from __future__ import annotations
 
@@ -117,8 +117,12 @@ def doctor() -> None:
 
 
 @app.command("tools")
-def list_tools() -> None:
+def list_tools(
+    json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON for scripting / MCP clients"),
+) -> None:
     """List all available diagnostic tools with short descriptions."""
+    import json as _json
+
     tools = [
         ("diagnose_failed_channels", "Channel state + AMQERR analysis (2035, 2009, 2059, INDOUBT, AMQ9202/9208/9503)"),
         ("analyze_dlq_and_suggest_reprocessing", "Dead-letter queue inspection (HEADERS ONLY — bodies never read)"),
@@ -130,6 +134,11 @@ def list_tools() -> None:
         ("full_mq_health_check", "Composite: channels + DLQ + cluster against one QM. Executive summary + ranked findings"),
     ]
 
+    if json_output:
+        data = [{"name": n, "description": d} for n, d in tools]
+        print(_json.dumps({"tools": data, "count": len(data)}, indent=2))
+        return
+
     print("MQ-Sentinel Diagnostic Tools")
     print("=" * 40)
     for name, desc in tools:
@@ -138,6 +147,35 @@ def list_tools() -> None:
         print()
     print("All tools are strictly read-only.")
     print("Use via any MCP client (Claude Desktop, Cursor, etc.) or the HTTP API.")
+    print("Tip: mq-sentinel tools --json")
+
+
+@app.command()
+def info() -> None:
+    """Show quick information about this MQ-Sentinel instance and its capabilities."""
+    tools_count = 8
+    flavors = "Standalone, Multi-Instance, RDQM, Native HA (+CRR), Uniform/Traditional Cluster, z/OS QSG, Appliance, Containerized"
+
+    print("MQ-Sentinel")
+    print("=" * 40)
+    print(f"Version: {__version__}")
+    print(f"Tools:   {tools_count} diagnostic tools (all read-only)")
+    print(f"Flavors: {flavors}")
+    print()
+    print("Security highlights:")
+    print("  • 3-layer read-only enforcement")
+    print("  • Prompt-injection firewall + output sanitizer")
+    print("  • Verified IBM Knowledge Center citations (CI-checked daily)")
+    print("  • OIDC + RBAC with prod/nonprod scoping")
+    print("  • Hash-chained tamper-evident audit")
+    print("  • Distroless + signed images + SBOM")
+    print()
+    print("Try:")
+    print("  mq-sentinel tools")
+    print("  mq-sentinel doctor")
+    print("  mq-sentinel serve")
+    print()
+    print("Docs: https://github.com/pramodreddyboddu/mq-sentinel")
 
 
 @app.command()

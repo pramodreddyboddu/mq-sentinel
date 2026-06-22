@@ -71,9 +71,12 @@ description: |
 
   Built as a serious engineering project (full threat model, 3-layer read-only
   enforcement, prompt-injection firewall, OIDC+RBAC, hash-chained audit, distroless
-  + signed images, production Helm). Designed so security teams can actually say yes.
+  + signed images, production Helm).
 
-  Includes `mq-sentinel doctor`, rich fixtures, and complete org-readiness artifacts.
+  Excellent DX: `mq-sentinel doctor`, `tools`, `info`. Designed so security teams
+  and platform engineers can actually say yes.
+
+  Includes complete org-readiness artifacts.
 
 categories:
   - "messaging"

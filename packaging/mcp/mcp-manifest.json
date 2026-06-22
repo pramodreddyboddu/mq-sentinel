@@ -3,7 +3,7 @@
   "name": "mq-sentinel",
   "displayName": "MQ-Sentinel",
   "version": "0.3.0",
-  "description": "Production-grade, read-only IBM MQ diagnostic MCP server for AI agents. Returns Root Cause + Recommended Fix Steps + verified IBM Knowledge Center citations. Built with strong security, OIDC+RBAC, hash-chained audit, and full org-readiness artifacts.",
+  "description": "Production-grade, read-only IBM MQ diagnostic MCP server for AI agents. 8 tools across 10 MQ flavors. Returns Root Cause + Fix Steps + verified IBM KC citations. Includes `mq-sentinel doctor`, `tools`, and `info` for great DX. Full security model + org-readiness artifacts.",
   "author": {
     "name": "Pramod Boddu",
     "url": "https://github.com/pramodreddyboddu/mq-sentinel"
@@ -24,7 +24,7 @@
     { "name": "diagnose_native_ha_issues",           "description": "Replica state, quorum, log replay lag, CRR." },
     { "name": "diagnose_rdqm_issues",                "description": "Pacemaker quorum, DRBD per-peer state, split-brain." },
     { "name": "diagnose_zos_qsg_issues",             "description": "QSG members, CHIN, page sets, buffer pools, CF structures." },
-    { "name": "diagnose_multi_instance_issues",      "description": "Active/standby state, dual-active split, failover events." },
+    { "name": "diagnose_multi_instance_issues",      "description": "Active/standby state, dual-active split, standby permission, failover events." },
     { "name": "full_mq_health_check",                "description": "Composite: channels + DLQ + cluster, ranked by severity." }
   ],
   "transports": {

@@ -65,7 +65,8 @@ Watch MQ-Sentinel diagnose a real `2035 NOT_AUTHORIZED`, an `INDOUBT` channel, a
 
 ```bash
 uv run mq-sentinel doctor
-uv run mq-sentinel tools     # see everything this server can do
+uv run mq-sentinel tools     # list all diagnostics
+uv run mq-sentinel info      # overview + security highlights
 ```
 
 ### Architecture at a Glance
@@ -227,7 +228,10 @@ make docker         # build the production container image
 make rpm deb        # build RPM + DEB packages (requires `gem install fpm`)
 ```
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for the full owner-level development guide, how to add diagnostics, and the philosophy behind this project.
+See:
+- [DEVELOPMENT.md](DEVELOPMENT.md) — owner-level development guide
+- [docs/usage-with-ai.md](docs/usage-with-ai.md) — best prompts and patterns when using with Claude / Cursor / Grok
+- [docs/ORG-READINESS-PLAN.md](docs/ORG-READINESS-PLAN.md) — the full journey to org-ready
 
 ## Transports
 

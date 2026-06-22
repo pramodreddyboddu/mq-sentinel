@@ -59,8 +59,8 @@ rpm: install         ## Build an RPM via fpm (requires fpm + ruby)
 	    -n mq-sentinel \
 	    -v $(VERSION) \
 	    --license "Proprietary" \
-	    --vendor "MG" \
-	    --maintainer "MG <noreply@example.com>" \
+	    --vendor "Pramod Boddu" \
+	    --maintainer "Pramod Boddu <pramod@example.com>" \
 	    --url "https://github.com/pramodreddyboddu/mq-sentinel" \
 	    --description "Read-only IBM MQ diagnostic MCP server" \
 	    --architecture $(ARCH) \
@@ -97,8 +97,8 @@ deb: install         ## Build a .deb via fpm
 	    -n mq-sentinel \
 	    -v $(VERSION) \
 	    --license "Proprietary" \
-	    --vendor "MG" \
-	    --maintainer "MG <noreply@example.com>" \
+	    --vendor "Pramod Boddu" \
+	    --maintainer "Pramod Boddu <pramod@example.com>" \
 	    --url "https://github.com/pramodreddyboddu/mq-sentinel" \
 	    --description "Read-only IBM MQ diagnostic MCP server" \
 	    --architecture amd64 \

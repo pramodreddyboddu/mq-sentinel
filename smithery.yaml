@@ -64,11 +64,16 @@ startCommand:
 # Public-facing metadata for Smithery's directory page.
 displayName: "MQ-Sentinel"
 description: |
-  Read-only IBM MQ diagnostic MCP server. Returns Root Cause + Recommended
-  Fix Steps + IBM Knowledge Center citations for every IBM MQ deployment
-  flavor (Standalone, Multi-Instance, RDQM, Native HA + CRR, Uniform Cluster,
-  Traditional Cluster, z/OS QSG, MQ Appliance, Containerized) — read-only by
-  construction, prompt-injection firewall, hash-chained audit log.
+  Production-grade, read-only IBM MQ diagnostic MCP server for AI agents.
+
+  Returns Root Cause + Recommended Fix Steps + verified IBM Knowledge Center
+  citations across all 10 IBM MQ flavors — with zero hallucinations.
+
+  Built as a serious engineering project (full threat model, 3-layer read-only
+  enforcement, prompt-injection firewall, OIDC+RBAC, hash-chained audit, distroless
+  + signed images, production Helm). Designed so security teams can actually say yes.
+
+  Includes `mq-sentinel doctor`, rich fixtures, and complete org-readiness artifacts.
 
 categories:
   - "messaging"

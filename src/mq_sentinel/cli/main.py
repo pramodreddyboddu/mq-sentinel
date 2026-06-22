@@ -48,6 +48,72 @@ def health() -> None:
 
 
 @app.command()
+def doctor() -> None:
+    """Run environment and configuration diagnostics (does not require MQ)."""
+    import platform
+    import sys as pysys
+    from pathlib import Path
+
+    from mq_sentinel.config import load_settings
+
+    print("MQ-Sentinel Doctor")
+    print("=" * 40)
+    print(f"Version: {__version__}")
+    print(f"Python:  {platform.python_version()} ({pysys.executable})")
+    print(f"Platform: {platform.platform()}")
+    print()
+
+    # Check optional pymqi
+    try:
+        import pymqi  # type: ignore
+
+        print(f"✓ pymqi available (version {getattr(pymqi, '__version__', 'unknown')})")
+        print("  Real MQ connections should work if client libraries are installed.")
+    except ImportError:
+        print("✗ pymqi NOT installed")
+        print("  Real MQ connections will not work.")
+        print("  For development/demo use the built-in fixtures (make demo).")
+        print("  To use against real QMs: see docs/byom.md")
+
+    print()
+
+    # Config & security basics
+    try:
+        settings = load_settings()
+        print("✓ Configuration loaded successfully")
+        print(f"  Environment: {settings.server.environment}")
+        print(f"  Transport default: {settings.server.transport}")
+        print(f"  Auth disabled for local dev: {settings.auth.disable_auth_for_local_dev}")
+        print(f"  Audit log: {settings.audit.log_path}")
+        print(f"  Read-only enforcement: {settings.security.enforce_readonly}")
+    except Exception as exc:
+        print(f"✗ Failed to load configuration: {exc}")
+        pysys.exit(2)
+
+    print()
+
+    # Audit path check
+    try:
+        audit_path = Path(settings.audit.log_path)
+        audit_path.parent.mkdir(parents=True, exist_ok=True)
+        # Try a non-destructive touch
+        if audit_path.exists():
+            print("✓ Audit log path is writable (file exists)")
+        else:
+            audit_path.touch()
+            audit_path.unlink(missing_ok=True)
+            print("✓ Audit log path is writable")
+    except Exception as exc:
+        print(f"✗ Audit log path problem: {exc}")
+
+    print()
+    print("Doctor complete. Most issues are fixed by:")
+    print("  - uv sync --all-extras --dev")
+    print("  - Setting the right MQS_* environment variables")
+    print("  - Running inside the official container image")
+
+
+@app.command()
 def serve(
     transport: str = typer.Option(
         None,

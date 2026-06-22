@@ -1,11 +1,11 @@
 [project]
 name = "mq-sentinel"
 version = "0.3.0"
-description = "MQ-Sentinel — read-only, enterprise-grade IBM MQ diagnostic MCP server"
+description = "MQ-Sentinel — production-grade, read-only IBM MQ diagnostic MCP server for AI agents. Zero hallucinations. Built for trust in enterprise environments."
 readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "Proprietary" }
-authors = [{ name = "MG" }]
+authors = [{ name = "Pramod Boddu" }]
 keywords = ["ibm-mq", "mcp", "diagnostics", "observability", "enterprise"]
 classifiers = [
     "Development Status :: 3 - Alpha",

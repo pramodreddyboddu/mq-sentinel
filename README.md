@@ -61,6 +61,12 @@ Watch MQ-Sentinel diagnose a real `2035 NOT_AUTHORIZED`, an `INDOUBT` channel, a
 
 > Want to record it for sharing? `make demo-record` produces a browser-playable asciinema cast.
 
+**Quick self-check (no MQ needed):**
+
+```bash
+uv run mq-sentinel doctor
+```
+
 ### Architecture at a Glance
 
 ```mermaid
@@ -113,6 +119,8 @@ This is not a toy or weekend demo. It demonstrates real engineering depth:
 
 Full journey and plan: [docs/ORG-READINESS-PLAN.md](docs/ORG-READINESS-PLAN.md)
 
+See also: [VISION.md](VISION.md) · [CONTRIBUTING.md](CONTRIBUTING.md)
+
 ---
 
 ## The Journey (Portfolio Story)
@@ -148,6 +156,8 @@ See [SECURITY.md](SECURITY.md) and [docs/threat-model.md](docs/threat-model.md).
 
 **Org / Enterprise Ready?**  
 This project was deliberately built for real organizations (banks, gov, large enterprises). See the complete journey:
+
+See [VISION.md](VISION.md) for the owner product principles and long-term thinking.
 
 - [Org-Readiness Plan](docs/ORG-READINESS-PLAN.md) — 7-phase plan executed end-to-end
 - [Production Guide](docs/PRODUCTION.md) + [Platform Team Onboarding](docs/getting-started-platform-teams.md)

@@ -65,6 +65,7 @@ Watch MQ-Sentinel diagnose a real `2035 NOT_AUTHORIZED`, an `INDOUBT` channel, a
 
 ```bash
 uv run mq-sentinel doctor
+uv run mq-sentinel tools     # see everything this server can do
 ```
 
 ### Architecture at a Glance
@@ -119,7 +120,7 @@ This is not a toy or weekend demo. It demonstrates real engineering depth:
 
 Full journey and plan: [docs/ORG-READINESS-PLAN.md](docs/ORG-READINESS-PLAN.md)
 
-See also: [VISION.md](VISION.md) · [CONTRIBUTING.md](CONTRIBUTING.md)
+See also: [VISION.md](VISION.md) · [CONTRIBUTING.md](CONTRIBUTING.md) · [DEVELOPMENT.md](DEVELOPMENT.md)
 
 ---
 
@@ -225,6 +226,8 @@ make ci             # lint + type + tests + security suite (everything CI runs)
 make docker         # build the production container image
 make rpm deb        # build RPM + DEB packages (requires `gem install fpm`)
 ```
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for the full owner-level development guide, how to add diagnostics, and the philosophy behind this project.
 
 ## Transports
 

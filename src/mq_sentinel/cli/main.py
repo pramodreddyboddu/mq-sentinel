@@ -14,7 +14,10 @@ from mq_sentinel.server import MQSentinelServer, serve_stdio
 
 app = typer.Typer(
     name="mq-sentinel",
-    help="MQ-Sentinel — read-only IBM MQ diagnostic MCP server.",
+    help=(
+        "MQ-Sentinel — production-grade, read-only IBM MQ diagnostic MCP server.\n"
+        "Safe for AI agents. Zero hallucinations. Built to be trusted in enterprise environments."
+    ),
     no_args_is_help=True,
     add_completion=False,
 )
@@ -111,6 +114,30 @@ def doctor() -> None:
     print("  - uv sync --all-extras --dev")
     print("  - Setting the right MQS_* environment variables")
     print("  - Running inside the official container image")
+
+
+@app.command("tools")
+def list_tools() -> None:
+    """List all available diagnostic tools with short descriptions."""
+    tools = [
+        ("diagnose_failed_channels", "Channel state + AMQERR analysis (2035, 2009, 2059, INDOUBT, AMQ9202/9208/9503)"),
+        ("analyze_dlq_and_suggest_reprocessing", "Dead-letter queue inspection (HEADERS ONLY — bodies never read)"),
+        ("check_cluster_health", "Partial repos, stale CLUSQMGR, suspended members, unhealthy cluster channels"),
+        ("diagnose_native_ha_issues", "Replica state, quorum, log replay lag, split-brain, CRR lag"),
+        ("diagnose_rdqm_issues", "Pacemaker quorum, offline nodes, DRBD state, split-brain"),
+        ("diagnose_zos_qsg_issues", "QSG members, CHIN, page sets, buffer pools, CF structures"),
+        ("diagnose_multi_instance_issues", "Active/standby state, dual-active split, standby permission, failover"),
+        ("full_mq_health_check", "Composite: channels + DLQ + cluster against one QM. Executive summary + ranked findings"),
+    ]
+
+    print("MQ-Sentinel Diagnostic Tools")
+    print("=" * 40)
+    for name, desc in tools:
+        print(f"• {name}")
+        print(f"  {desc}")
+        print()
+    print("All tools are strictly read-only.")
+    print("Use via any MCP client (Claude Desktop, Cursor, etc.) or the HTTP API.")
 
 
 @app.command()

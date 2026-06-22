@@ -2,10 +2,10 @@
   "$schema": "https://modelcontextprotocol.io/schemas/server-manifest-v1.json",
   "name": "mq-sentinel",
   "displayName": "MQ-Sentinel",
-  "version": "0.1.0",
-  "description": "Read-only IBM MQ diagnostic MCP server. Root Cause + Fix Steps + IBM KC citations for every IBM MQ deployment flavor.",
+  "version": "0.3.0",
+  "description": "Production-grade, read-only IBM MQ diagnostic MCP server for AI agents. Returns Root Cause + Recommended Fix Steps + verified IBM Knowledge Center citations. Built with strong security, OIDC+RBAC, hash-chained audit, and full org-readiness artifacts.",
   "author": {
-    "name": "MG",
+    "name": "Pramod Boddu",
     "url": "https://github.com/pramodreddyboddu/mq-sentinel"
   },
   "license": "Proprietary",

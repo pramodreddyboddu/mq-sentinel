@@ -8,7 +8,7 @@ ARCH       ?= x86_64
 DIST_DIR   := dist
 PKG_DIR    := $(DIST_DIR)/pkg
 
-.PHONY: help install dev test lint type security ci docker rpm deb pkg clean release
+.PHONY: help install dev test lint type security ci docker rpm deb pkg clean release demo demo-fast demo-record
 
 help:                ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'

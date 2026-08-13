@@ -104,7 +104,7 @@ from mq_sentinel.tools.${tool} import diagnose_${tool//_/_} if False else None
 }
 
 # ─── DEMO STARTS HERE ────────────────────────────────────────────────────
-clear
+clear || true
 
 cat <<'BANNER'
     __  __ ____         _____            __  _            __

@@ -9,6 +9,7 @@ All notable changes to MQ-Sentinel are documented here. The format is loosely ba
 ## [Unreleased] — MCP distribution (any client)
 
 - Official MCP Registry manifest at repo-root `server.json` (`io.github.pramodreddyboddu/mq-sentinel`).
+- PyPI package `mq-sentinel` 0.3.0 is the public install target (`uvx mq-sentinel serve`).
 - Docker label `io.modelcontextprotocol.server.name` required by the official registry.
 - README `mcp-name` marker so a future PyPI package can be verified.
 - `docs/mcp-clients.md` — copy-paste install for Grok, Claude Desktop, Claude Code, Cursor, Gemini CLI, ChatGPT.

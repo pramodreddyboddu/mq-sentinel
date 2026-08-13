@@ -18,8 +18,11 @@
   ],
   "packages": [
     {
-      "registryType": "oci",
-      "identifier": "ghcr.io/pramodreddyboddu/mq-sentinel:0.3.0",
+      "registryType": "pypi",
+      "identifier": "mq-sentinel",
+      "version": "0.3.0",
+      "registryBaseUrl": "https://pypi.org",
+      "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
       },

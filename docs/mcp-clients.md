@@ -23,6 +23,15 @@ export MQS_SERVER_ENVIRONMENT=dev
 
 ## Grok Build
 
+From PyPI (no clone):
+
+```bash
+grok mcp add mq-sentinel \
+  -e MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV=true \
+  -e MQS_SERVER_ENVIRONMENT=dev \
+  -- uvx mq-sentinel serve
+```
+
 From this repo (uv already installed):
 
 ```bash

@@ -11,7 +11,7 @@ you tag v0.1.0 + the landing page is live.
 
 **A — recommended:**
 
-> Show HN: I built an AI diagnostic agent for IBM MQ that physically can't hallucinate fixes
+> Show HN: I built an AI diagnostic agent for IBM MQ that physically can't hallucinate fixes — now with production Helm, OIDC, and org-ready security posture
 
 **B — more technical:**
 

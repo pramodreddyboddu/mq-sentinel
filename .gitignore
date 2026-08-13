@@ -26,3 +26,5 @@ sbom.json
 *.rdb
 secrets/
 .claude/
+output/
+tmp/

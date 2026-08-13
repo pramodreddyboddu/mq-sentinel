@@ -14,6 +14,7 @@ LABEL org.opencontainers.image.title="mq-sentinel"
 LABEL org.opencontainers.image.description="Read-only IBM MQ diagnostic MCP server"
 LABEL org.opencontainers.image.licenses="Proprietary"
 LABEL org.opencontainers.image.source="https://github.com/pramodreddyboddu/mq-sentinel"
+LABEL io.modelcontextprotocol.server.name="io.github.pramodreddyboddu/mq-sentinel"
 
 COPY --from=builder /install /usr/local
 ENV PYTHONPATH=/usr/local/lib/python3.12/site-packages

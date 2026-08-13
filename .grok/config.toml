@@ -1,0 +1,9 @@
+# Project-scoped MCP so Grok launched from this repo can use MQ-Sentinel.
+# Requires `uv` on PATH. Demo/fixture mode — no live IBM MQ.
+
+[mcp_servers.mq-sentinel]
+command = "uv"
+args = ["run", "mq-sentinel", "serve"]
+env = { MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV = "true", MQS_SERVER_ENVIRONMENT = "dev" }
+enabled = true
+startup_timeout_sec = 60

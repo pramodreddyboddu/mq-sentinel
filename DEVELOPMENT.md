@@ -80,7 +80,7 @@ Then point your MCP client or curl at it.
 6. **Documentation**
    - Update the table in README.md
    - Consider updating `marketing/` assets
-   - Add to `packaging/mcp/mcp-manifest.json`
+   - Add to `packaging/mcp/mcp-manifest.json` and keep `server.json` version in sync
 
 7. **Run the full gate**
    ```bash

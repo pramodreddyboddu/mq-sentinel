@@ -58,6 +58,9 @@ class ServerConfig(BaseSettings):
     http_port: int = 8080
     environment: Literal["dev", "staging", "prod"] = "dev"
 
+    inventory_dir: str | None = None
+    """Directory of YAML files for large org fleet inventory (loaded at startup)."""
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="MQS_", extra="forbid")

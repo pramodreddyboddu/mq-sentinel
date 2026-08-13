@@ -1,0 +1,38 @@
+# Example inventory for a mid-to-large organization
+# Mount this as ConfigMap or use with external registry (roadmap item)
+
+qms:
+  - name: PROD_QM_EU1
+    host: mq-prod-eu1.internal
+    port: 1414
+    channel: SYSTEM.ADMIN.SVRCONN
+    ssl: true
+    tier: prod
+    description: "Primary EU production QM for payments"
+
+  - name: PROD_QM_US1
+    host: mq-prod-us1.internal
+    port: 1414
+    channel: SYSTEM.ADMIN.SVRCONN
+    ssl: true
+    tier: prod
+    description: "US production QM"
+
+  - name: NONPROD_QM_EU1
+    host: mq-np-eu1.internal
+    port: 1414
+    channel: SYSTEM.ADMIN.SVRCONN
+    ssl: false
+    tier: nonprod
+    description: "Non-prod for EU testing"
+
+  - name: ZOS_QSG_MAIN
+    host: mq-zos-main.internal
+    port: 1414
+    channel: SYSTEM.ADMIN.SVRCONN
+    ssl: true
+    tier: prod
+    description: "z/OS Queue Sharing Group - mainframe core"
+
+# For very large estates, replace with a small internal service or database-backed registry.
+# The InMemoryInventory is suitable up to ~50-100 QMs.

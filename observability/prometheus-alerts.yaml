@@ -1,0 +1,38 @@
+groups:
+- name: mq-sentinel
+  rules:
+  - alert: MQSentinelHighErrorRate
+    expr: rate(mq_sentinel_errors_total[5m]) > 0.05
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High error rate in MQ-Sentinel"
+      description: "Error rate {{ $value }} for tool {{ $labels.tool }}"
+
+  - alert: MQSentinelDown
+    expr: up{job="mq-sentinel"} == 0
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: "MQ-Sentinel is down"
+      description: "Instance {{ $labels.instance }} is not responding"
+
+  - alert: MQSentinelHighLatency
+    expr: histogram_quantile(0.95, rate(mq_sentinel_request_duration_seconds_bucket[5m])) > 10
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High p95 latency in MQ diagnostics"
+      description: "95th percentile latency is {{ $value }}s"
+
+  - alert: MQSentinelAuditWriteFailures
+    expr: rate(mq_sentinel_audit_errors_total[5m]) > 0
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: "Audit log write failures"
+      description: "Possible tampering or storage issue. Investigate immediately."

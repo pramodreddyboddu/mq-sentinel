@@ -1,0 +1,45 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.pramodreddyboddu/mq-sentinel",
+  "title": "MQ-Sentinel",
+  "description": "Read-only IBM MQ diagnostics for AI agents. Cited root cause, never destructive.",
+  "version": "0.3.0",
+  "websiteUrl": "https://github.com/pramodreddyboddu/mq-sentinel",
+  "repository": {
+    "url": "https://github.com/pramodreddyboddu/mq-sentinel",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/pramodreddyboddu/mq-sentinel/main/web/logo.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": ["any"]
+    }
+  ],
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "ghcr.io/pramodreddyboddu/mq-sentinel:0.3.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV",
+          "description": "Set true for local demo only. Refused when environment=prod.",
+          "isRequired": false,
+          "format": "boolean",
+          "default": "true"
+        },
+        {
+          "name": "MQS_SERVER_ENVIRONMENT",
+          "description": "dev | staging | prod — used in audit and RBAC.",
+          "isRequired": false,
+          "format": "string",
+          "default": "dev",
+          "choices": ["dev", "staging", "prod"]
+        }
+      ]
+    }
+  ]
+}

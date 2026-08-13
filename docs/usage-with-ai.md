@@ -1,6 +1,8 @@
 # Using MQ-Sentinel with AI Agents
 
-This guide shows how to get the most value out of MQ-Sentinel when using it with Claude, Cursor, Grok, or other MCP-capable tools.
+This guide shows how to get the most value out of MQ-Sentinel when using it with Claude, Cursor, Grok, Gemini, ChatGPT, or other MCP-capable tools.
+
+**Install / connect first:** [mcp-clients.md](mcp-clients.md) — one server, every client.
 
 ## Why MQ-Sentinel is different
 
@@ -12,14 +14,14 @@ MQ-Sentinel returns **typed, evidence-backed, citation-verified** diagnostics th
 
 ## Recommended Setup
 
-### For local development / Claude Desktop / Cursor
+### For local development / Claude Desktop / Cursor / Grok / Gemini CLI
 
 ```bash
 # Easiest: run in dev mode (stdio)
 uv run mq-sentinel serve
 ```
 
-Then add the stdio server in your AI tool's MCP settings.
+Then add the stdio server in your AI tool's MCP settings. Exact JSON/TOML for each client: [mcp-clients.md](mcp-clients.md).
 
 ### For production / team use
 

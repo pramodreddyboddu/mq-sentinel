@@ -1,5 +1,7 @@
 # MQ-Sentinel
 
+<!-- mcp-name: io.github.pramodreddyboddu/mq-sentinel -->
+
 **Production-grade, read-only IBM MQ diagnostic MCP server that AI agents can safely use — with zero hallucinations.**
 
 I built this as a serious side project to solve a real, high-stakes problem in enterprise environments. It is now a strong public portfolio piece demonstrating systems engineering, security, observability, production deployment, and building safe infrastructure for AI agents.
@@ -13,7 +15,8 @@ I built this as a serious side project to solve a real, high-stakes problem in e
 > **0.3.0** — 8 diagnostic tools across all 10 IBM MQ flavors. Read-only by design. Prompt-injection firewall. OIDC + RBAC. Hash-chained audit. Verified IBM Knowledge Center citations (CI-enforced). Production Helm with HPA + air-gapped packaging.
 
 **GitHub:** https://github.com/pramodreddyboddu/mq-sentinel  
-**Live Demo:** https://mq-sentinel.io
+**Live Demo:** https://mq-sentinel.io  
+**Get it in front of people:** [docs/LAUNCH.md](docs/LAUNCH.md)
 
 ---
 
@@ -68,6 +71,12 @@ uv run mq-sentinel doctor
 uv run mq-sentinel tools     # list all diagnostics
 uv run mq-sentinel info      # overview + security highlights
 ```
+
+### Use it from Claude, Grok, Cursor, Gemini, ChatGPT
+
+One MCP server — not a per-vendor plugin. Copy-paste configs: **[docs/mcp-clients.md](docs/mcp-clients.md)**.
+
+List it where agents discover servers: official [MCP Registry](https://registry.modelcontextprotocol.io/) (`server.json`) + [Smithery](https://smithery.ai) (`smithery.yaml`). ChatGPT needs a **hosted HTTPS** endpoint, not local stdio.
 
 ### Architecture at a Glance
 

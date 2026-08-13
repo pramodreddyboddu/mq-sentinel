@@ -1,0 +1,61 @@
+# Production values for mid-to-large organizations
+# Usage: helm upgrade --install mq-sentinel . -f values-production.yaml --set oidc.issuer=... etc.
+
+replicaCount: 3
+
+image:
+  tag: "0.3.0"
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 60
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+env:
+  MQS_SERVER_ENVIRONMENT: prod
+  MQS_SERVER_TRANSPORT: http
+  MQS_SERVER_HTTP_HOST: "0.0.0.0"
+  MQS_SERVER_HTTP_PORT: "8080"
+  MQS_AUDIT_LOG_PATH: /var/audit/audit.jsonl
+  MQS_SECURITY_RATE_LIMIT_PER_MINUTE: "120"
+
+oidc:
+  issuer: "https://your-idp.example.com/realms/mq-sentinel"
+  audience: "mq-sentinel"
+  jwksUrl: "https://your-idp.example.com/realms/mq-sentinel/protocol/openid-connect/certs"
+
+networkPolicy:
+  enabled: true
+  allowedEgressCIDRs:
+    - "10.0.0.0/8"   # Replace with your actual MQ subnets
+
+serviceMonitor:
+  enabled: true
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+
+inventory:
+  configMap:
+    enabled: true
+    name: mq-sentinel-inventory
+
+# Mount your inventory via a separate ConfigMap or Secret in production
+# Example:
+# kubectl create configmap mq-sentinel-inventory --from-file=inventory.yaml
+
+# For even stronger security in regulated orgs, consider:
+# - external-secrets-operator for credentials
+# - stricter NetworkPolicy (only specific MQ listener IPs)
+# - PodSecurityPolicy / PodSecurityStandards
+# - Image signing verification in your cluster

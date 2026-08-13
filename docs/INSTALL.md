@@ -6,9 +6,9 @@ audit chain. Only the operational wrapper differs.
 
 | Path | For | Time | Onboarding |
 |------|-----|------|------------|
-| **1. One-line installer** | Solo / startup, single host, ≤ 5 QMs | 5 min | `curl … \| bash` |
-| **2. Kubernetes / Helm** | Mid-org, K8s estate, IdP in place | 30 min | `helm install` (worked example: `examples/kind/`) |
-| **3. RPM / DEB package** | Regulated / air-gapped (banks, gov, healthcare) | 1 evening | `dnf install` / `apt install` |
+| **1. One-line installer (Docker)** | Solo / startup, single host, ≤ 5 QMs | 5 min | `curl … \| bash` |
+| **2. Kubernetes / Helm (recommended)** | Mid-to-large orgs, existing IdP | 30 min | See production values + `examples/org/` |
+| **3. RPM / DEB package** | Regulated / air-gapped (banks, gov, healthcare) | 1 evening | `dnf install` / `apt install` + your config management |
 
 If you have IBM MQ client libraries on the host already → see
 [Bring Your Own MQ](byom.md) for how to wire them in.
@@ -47,6 +47,24 @@ The script:
 - Drops a starter `inventory.yaml`.
 - Runs the container with `--read-only`, `--cap-drop ALL`, `no-new-privileges`.
 - Verifies `/healthz` before declaring success.
+
+## Path 2 — Kubernetes / Helm (Recommended for Orgs)
+
+See the full production guide in `docs/PRODUCTION.md` and the enhanced Helm chart in `deploy/helm/`.
+
+Quick production example:
+
+```bash
+helm install mq-sentinel ./deploy/helm \
+  -f deploy/helm/values-production.yaml \
+  --set oidc.issuer=... \
+  --set oidc.audience=... \
+  --set oidc.jwksUrl=...
+```
+
+Use `values-production.yaml` + your own overlays for secrets and inventory.
+
+For large fleets, mount a ConfigMap with a comprehensive `inventory.yaml`.
 
 ### Add Queue Managers
 

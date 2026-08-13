@@ -6,6 +6,16 @@ All notable changes to MQ-Sentinel are documented here. The format is loosely ba
 
 ---
 
+## [Unreleased] — MCP distribution (any client)
+
+- Official MCP Registry manifest at repo-root `server.json` (`io.github.pramodreddyboddu/mq-sentinel`).
+- Docker label `io.modelcontextprotocol.server.name` required by the official registry.
+- README `mcp-name` marker so a future PyPI package can be verified.
+- `docs/mcp-clients.md` — copy-paste install for Grok, Claude Desktop, Claude Code, Cursor, Gemini CLI, ChatGPT.
+- Project-scoped `.grok/config.toml` so Grok launched from this repo loads MQ-Sentinel.
+- Replaced the fake `@modelcontextprotocol/server-mq-sentinel` npm snippet.
+- Registry submit path rewritten: official registry first, then Smithery — not the old servers README PR.
+
 ## [Unreleased] — Owner Polish & DX (Full Ownership Mode)
 
 Treated the project as a long-term owned artifact:

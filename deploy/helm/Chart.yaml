@@ -2,7 +2,18 @@ apiVersion: v2
 name: mq-sentinel
 description: MQ-Sentinel — read-only IBM MQ diagnostic MCP server
 type: application
-version: 0.1.0
-appVersion: "0.1.0"
+version: 0.3.0
+appVersion: "0.3.0"
 maintainers:
   - name: MG
+    email: example@your-org.com  # Update for your org
+icon: https://raw.githubusercontent.com/pramodreddyboddu/mq-sentinel/main/web/logo.svg
+keywords:
+  - ibm-mq
+  - mcp
+  - diagnostics
+  - observability
+  - enterprise
+home: https://mq-sentinel.io
+sources:
+  - https://github.com/pramodreddyboddu/mq-sentinel

@@ -14,6 +14,7 @@ spec:
       labels:
         app.kubernetes.io/name: mq-sentinel
     spec:
+      serviceAccountName: {{ include "mq-sentinel.serviceAccountName" . }}
       automountServiceAccountToken: false
       securityContext:
         {{- toYaml .Values.securityContext | nindent 8 }}
@@ -60,6 +61,15 @@ spec:
             - name: secrets
               mountPath: /var/secrets
               readOnly: true
+            {{- if .Values.inventory.configMap.enabled }}
+            - name: inventory
+              mountPath: /etc/mq-sentinel
+              readOnly: true
+            {{- end }}
+          {{- if .Values.resources }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- end }}
       volumes:
         - name: audit
           emptyDir: {}
@@ -67,3 +77,8 @@ spec:
           secret:
             secretName: {{ .Release.Name }}-mq-credentials
             defaultMode: 0400
+        {{- if .Values.inventory.configMap.enabled }}
+        - name: inventory
+          configMap:
+            name: {{ .Values.inventory.configMap.name | default (printf "%s-inventory" .Release.Name) }}
+        {{- end }}

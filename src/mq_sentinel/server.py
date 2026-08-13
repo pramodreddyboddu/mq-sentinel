@@ -83,7 +83,7 @@ class MQSentinelServer:
             burst=self._settings.security.rate_limit_per_minute,
         )
         self._verifier: OIDCVerifier = verifier or self._default_verifier()
-        self._inventory: InventoryRegistry = inventory or InMemoryInventory()
+        self._inventory: InventoryRegistry = inventory or self._resolve_inventory()
         self._secrets: SecretsBackend = secrets or _NullSecrets()
         self._connector_factory: Callable[[], MQConnector] = (
             connector_factory or self._default_connector_factory
@@ -93,6 +93,24 @@ class MQSentinelServer:
     def _default_connector_factory() -> MQConnector:
         # In dev, fall back to a fixture connector pointed at demo-sandbox.
         return FixtureConnector(Path("./demo-sandbox/fixtures"))
+
+    @staticmethod
+    def load_inventory_from_dir(directory: str | Path) -> "InMemoryInventory":
+        """Load all .yaml files from a directory (convenient for large org fleet management)."""
+        from mq_sentinel.inventory.registry import load_from_multiple
+        import glob
+
+        paths = sorted(glob.glob(str(Path(directory) / "*.yaml")))
+        if not paths:
+            paths = sorted(glob.glob(str(Path(directory) / "*.yml")))
+        return load_from_multiple(paths) if paths else InMemoryInventory()
+
+    def _resolve_inventory(self) -> InventoryRegistry:
+        """Resolve inventory from config dir or default."""
+        inv_dir = getattr(self._settings.server, "inventory_dir", None)
+        if inv_dir:
+            return self.load_inventory_from_dir(Path(inv_dir))
+        return InMemoryInventory()
 
     def _default_verifier(self) -> OIDCVerifier:
         """Build a verifier from settings.

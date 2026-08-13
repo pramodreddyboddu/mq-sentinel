@@ -1,57 +1,91 @@
-# MCP Registry submission
+# How to list MQ-Sentinel so MCP clients can find it
 
-This is the entry to add to the community list at
-[github.com/modelcontextprotocol/servers](https://github.com/modelcontextprotocol/servers)
-(in the "Community Servers" section of `README.md`).
+The old “open a PR on `modelcontextprotocol/servers`” README table is no longer the official path. Publish metadata once; marketplaces consume it.
 
-## How to submit
+## 1. Official MCP Registry (do this first)
 
-```bash
-# 1. Fork modelcontextprotocol/servers
-# 2. In the README.md, append the row below to the "Community Servers" table:
-```
+Canonical store: https://registry.modelcontextprotocol.io/
 
-## The entry
+Namespace with GitHub login: `io.github.pramodreddyboddu/mq-sentinel`  
+Manifest: repo-root [`server.json`](../../server.json)
 
-> ### 🔧 IBM MQ Diagnostics
->
-> - **[MQ-Sentinel](https://github.com/pramodreddyboddu/mq-sentinel)** — Read-only IBM MQ diagnostic MCP server with Root Cause + Recommended Fix Steps + IBM Knowledge Center citations for every IBM MQ deployment flavor (Standalone, Multi-Instance, RDQM, Native HA + CRR, Uniform Cluster, Traditional Cluster, z/OS QSG). Eight diagnostic tools, prompt-injection firewall, hash-chained audit, OIDC-authenticated HTTP transport.
+### Prerequisites
 
-## PR description template
+1. Rebuild and push the image **with** the MCP ownership label (already in `deploy/Dockerfile`):
 
-```markdown
-## What
+   ```
+   LABEL io.modelcontextprotocol.server.name="io.github.pramodreddyboddu/mq-sentinel"
+   ```
 
-Adds MQ-Sentinel — a read-only IBM MQ diagnostic MCP server — to the
-Community Servers list.
+   Tag must match `server.json` (`ghcr.io/pramodreddyboddu/mq-sentinel:0.3.0`). The registry will reject a missing image or a missing label.
 
-## Why this fits the registry
+2. Install the publisher:
 
-- **Real-world enterprise use case**: IBM MQ is deployed at every Fortune
-  500 bank, insurer, airline, and telco. Admins burn hours chasing reason
-  codes 2035, 2009, 2080 across distributed/Native HA/RDQM/z/OS topologies.
+   ```bash
+   brew install mcp-publisher
+   # or: https://github.com/modelcontextprotocol/registry/releases
+   mcp-publisher --help
+   ```
 
-- **Demonstrates security best practices for MCP servers**:
-  - Read-only static command allowlist (DISPLAY/DIS/PING CHANNEL only).
-  - Output sanitizer + URL allowlist that constrains responses to
-    `www.ibm.com` — protecting the downstream LLM from prompt injection
-    via untrusted MQ data (queue/channel names, log lines, DLQ headers).
-  - Hash-chained tamper-evident audit log.
-  - DLQ-bodies-never-read invariant enforced by tests that scan the
-    server's own source code.
+3. Publish (interactive GitHub device login):
 
-- **Production-ready**: OIDC bearer auth, distroless container, signed
-  images, Helm chart, RPM/DEB packages, 167 tests, mypy strict, ruff clean.
+   ```bash
+   cd /path/to/mq-sentinel
+   mcp-publisher validate          # dry check of server.json
+   mcp-publisher login github
+   mcp-publisher publish
+   ```
 
-## Try it
+4. Confirm:
+
+   ```bash
+   curl "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.pramodreddyboddu/mq-sentinel"
+   ```
+
+Optional later: add a PyPI package (`registryType: pypi`) so clients can `uvx mq-sentinel serve`. README already contains `<!-- mcp-name: io.github.pramodreddyboddu/mq-sentinel -->`.
+
+## 2. Smithery
+
+`smithery.yaml` is already at the repo root.
+
+1. Open https://smithery.ai → Add Server
+2. Connect GitHub repo `pramodreddyboddu/mq-sentinel`
+3. Smithery reads `smithery.yaml` and lists the server
+
+## 3. Other directories
+
+After the official registry listing exists, check (many auto-ingest):
+
+- https://www.pulsemcp.com
+- https://glama.ai/mcp
+- https://mcp.so
+
+Manual submit only if they have not picked it up in a day or two.
+
+## 4. Client-specific “stores”
+
+There is no one plugin that installs into Claude + ChatGPT + Gemini + Grok at once.
+
+- **Grok / Claude Desktop / Claude Code / Cursor / Gemini CLI** — stdio (local) or HTTP. Copy-paste configs: [`docs/mcp-clients.md`](../../docs/mcp-clients.md)
+- **ChatGPT** — public HTTPS MCP URL only (Developer Mode custom connector). Needs hosted HTTP + OIDC.
+
+## 5. Community (buyers, not just developers)
+
+Use the drafts in `marketing/`:
+
+- IBM MQ / middleware Slack & LinkedIn groups
+- r/IBMMQ, r/mcp
+- Platform-engineering communities (banks, insurers already run MQ)
+
+## Legacy README-table entry
+
+If a community list still wants a markdown row:
+
+> **[MQ-Sentinel](https://github.com/pramodreddyboddu/mq-sentinel)** — Read-only IBM MQ diagnostic MCP server. Root Cause + Fix Steps + verified IBM KC citations across 10 MQ flavors. Eight tools, prompt-injection firewall, hash-chained audit, OIDC HTTP transport.
 
 ```bash
 docker run -i --rm \
   -e MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV=true \
-  ghcr.io/pramodreddyboddu/mq-sentinel:latest \
+  ghcr.io/pramodreddyboddu/mq-sentinel:0.3.0 \
   serve --transport stdio
-```
-
-The bundled demo sandbox produces realistic Root Cause Summaries against
-seeded faults — no live IBM MQ required to evaluate.
 ```

@@ -21,6 +21,7 @@ from mq_sentinel.connectors.base import (
     MQConnectionError,
     MQSCResult,
 )
+from mq_sentinel.connectors.mqsc_parser import parse_mqsc_reply
 from mq_sentinel.inventory.models import QMEntry
 from mq_sentinel.secrets.backend import MQCredential
 from mq_sentinel.security.allowlist import assert_mqsc_allowed, assert_shell_allowed
@@ -32,14 +33,19 @@ if TYPE_CHECKING:  # pragma: no cover
 _SUBPROCESS_TIMEOUT = 30  # seconds — bounded to prevent hung diagnostics
 _MQSC_TIMEOUT = 30
 
+# Shell diagnostics (dspmq, rdqmstatus, crm_mon, drbdadm) describe the machine
+# they run on. Only trust them when the QM is on this host.
+_LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
+
 
 def _import_pymqi() -> Any:
     try:
         import pymqi  # type: ignore[import-not-found]
     except ImportError as exc:
         raise MQConnectionError(
-            "pymqi is not installed. Install IBM MQ client libraries and "
-            "`uv sync --extra mq` to enable live connections."
+            "pymqi is not installed. Install the IBM MQ client libraries, then the "
+            "`mq` extra: `pip install 'mq-sentinel[mq]'` (Claude Code plugin: set "
+            "MQS_PACKAGE='mq-sentinel[mq]'). See docs/byom.md."
         ) from exc
     return pymqi
 
@@ -62,9 +68,13 @@ class PymqiConnector:
         cd.TransportType = self._pymqi.CMQC.MQXPT_TCP
 
         sco = None
+        if entry.cipher_spec:
+            cd.SSLCipherSpec = entry.cipher_spec.encode()
         if credential.keystore_path:
             sco = self._pymqi.SCO()
             sco.KeyRepository = credential.keystore_path.encode()
+            if credential.cert_label:
+                sco.CertificateLabel = credential.cert_label.encode()
 
         try:
             self._qmgr = self._pymqi.QueueManager(None)
@@ -77,10 +87,13 @@ class PymqiConnector:
             )
             self._pcf = self._pymqi.PCFExecute(self._qmgr)
             self._entry = entry
-        except Exception:  # noqa: BLE001 — wrap to avoid leaking creds
+        except Exception as exc:  # noqa: BLE001 — wrap to avoid leaking creds
             # Never include the password or full pymqi exception args (some
-            # versions echo the connection string back). Map to a clean message.
-            raise MQConnectionError(f"failed to connect to {entry.qm_name}") from None
+            # versions echo the connection string back). Only the numeric MQ
+            # reason code (e.g. 2035, 2059, 2393) is surfaced.
+            reason = getattr(exc, "reason", None)
+            detail = f" (MQRC {reason})" if isinstance(reason, int) else ""
+            raise MQConnectionError(f"failed to connect to {entry.qm_name}{detail}") from None
 
     def disconnect(self) -> None:
         try:
@@ -100,10 +113,10 @@ class PymqiConnector:
             raise MQConnectionError("not connected")
         assert_mqsc_allowed(command)
 
-        # MQSC over PCF: build the equivalent PCF command per verb. For the
-        # phase-1 read set (DISPLAY/DIS/PING CHANNEL) we route through
-        # MQCMD_ESCAPE so the curated allowlist remains the single source of
-        # truth for what is permitted.
+        # Route the allowlisted MQSC text through PCF MQCMD_ESCAPE so the
+        # curated allowlist stays the single source of truth for what runs.
+        # Each response message carries MQSC reply text in EscapedReply,
+        # which we parse into the same {ATTR: value} rows the fixtures use.
         pymqi = self._pymqi
         try:
             args = {
@@ -114,12 +127,16 @@ class PymqiConnector:
         except Exception as exc:
             raise MQConnectionError(f"MQSC execution failed for {command!r}") from exc
 
-        rows = self._parse_pcf_response(response)
-        raw = self._render_raw(rows)
-        return MQSCResult(command=command, rows=rows, raw=raw, completion_code=0)
+        raw = self._escaped_reply_text(response, pymqi.CMQCFC.MQCACF_ESCAPED_REPLY)
+        return MQSCResult(command=command, rows=parse_mqsc_reply(raw), raw=raw, completion_code=0)
 
     def execute_shell(self, argv: Sequence[str]) -> str:
         assert_shell_allowed(argv)
+        if self._entry is None or self._entry.host.lower() not in _LOCAL_HOSTS:
+            raise MQConnectionError(
+                f"{argv[0]} describes the local machine; it only runs when MQ-Sentinel "
+                "is on the queue manager's host (inventory host: localhost)"
+            )
         try:
             proc = subprocess.run(  # noqa: S603 — argv list, no shell, allowlisted
                 list(argv),
@@ -155,10 +172,12 @@ class PymqiConnector:
         depth = 0
 
         try:
+            # Browse + inquire only (never opened for input), so the MQ user needs no +get
+            # and an exclusive-input DLQ handler is never blocked by us.
             queue = pymqi.Queue(
                 self._qmgr,
                 queue_name,
-                cmqc.MQOO_INPUT_SHARED | cmqc.MQOO_BROWSE | cmqc.MQOO_INQUIRE,
+                cmqc.MQOO_BROWSE | cmqc.MQOO_INQUIRE | cmqc.MQOO_FAIL_IF_QUIESCING,
             )
             try:
                 depth = int(queue.inquire(cmqc.MQIA_CURRENT_Q_DEPTH))
@@ -240,22 +259,15 @@ class PymqiConnector:
     # --- helpers ----------------------------------------------------------
 
     @staticmethod
-    def _parse_pcf_response(response: Any) -> list[dict[str, str]]:
-        rows: list[dict[str, str]] = []
+    def _escaped_reply_text(response: Any, reply_param: int) -> str:
+        """Join the EscapedReply strings from every PCF response message."""
+        parts: list[str] = []
         for record in response or []:
-            row: dict[str, str] = {}
-            for k, v in record.items():
-                key = str(k)
-                if isinstance(v, bytes):
-                    row[key] = v.decode(errors="replace").strip()
-                else:
-                    row[key] = str(v)
-            rows.append(row)
-        return rows
-
-    @staticmethod
-    def _render_raw(rows: list[dict[str, str]]) -> str:
-        lines: list[str] = []
-        for row in rows:
-            lines.append(" ".join(f"{k}({v})" for k, v in row.items()))
-        return "\n".join(lines)
+            value = record.get(reply_param)
+            if value is None:
+                continue
+            values = value if isinstance(value, list) else [value]
+            for v in values:
+                text = v.decode(errors="replace") if isinstance(v, bytes) else str(v)
+                parts.append(text.rstrip())
+        return "\n".join(parts)

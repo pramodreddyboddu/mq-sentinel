@@ -36,6 +36,8 @@ class QMEntry(BaseModel):
     tenant: str = Field(default="default", max_length=64)
     secret_ref: str = Field(min_length=1, max_length=256)
     """Opaque reference resolved by the secrets backend (never the secret itself)."""
+    cipher_spec: str | None = Field(default=None, max_length=64, pattern=r"^[A-Z0-9_]+$")
+    """SVRCONN CipherSpec for TLS, e.g. ANY_TLS13_OR_HIGHER. Unset means plain TCP."""
 
     @field_validator("host")
     @classmethod

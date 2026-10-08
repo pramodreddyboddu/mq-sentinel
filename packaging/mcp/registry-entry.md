@@ -17,7 +17,7 @@ Manifest: repo-root [`server.json`](../../server.json)
    LABEL io.modelcontextprotocol.server.name="io.github.pramodreddyboddu/mq-sentinel"
    ```
 
-   Tag must match `server.json` (`ghcr.io/pramodreddyboddu/mq-sentinel:0.3.0`). The registry will reject a missing image or a missing label.
+   Tag must match `server.json` (`ghcr.io/pramodreddyboddu/mq-sentinel:0.4.0`). The registry will reject a missing image or a missing label.
 
 2. Install the publisher:
 
@@ -86,6 +86,6 @@ If a community list still wants a markdown row:
 ```bash
 docker run -i --rm \
   -e MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV=true \
-  ghcr.io/pramodreddyboddu/mq-sentinel:0.3.0 \
+  ghcr.io/pramodreddyboddu/mq-sentinel:0.4.0 \
   serve --transport stdio
 ```

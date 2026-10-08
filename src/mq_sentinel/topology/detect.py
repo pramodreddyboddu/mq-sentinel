@@ -20,6 +20,13 @@ from mq_sentinel.telemetry import get_logger
 _log = get_logger("mq_sentinel.topology")
 
 
+def normalize_mq_version(raw: str | None) -> str | None:
+    """MQSC reports VERSION as 8-digit VVRRMMFF (09040000); return dotted 9.4.0.0."""
+    if raw and len(raw) == 8 and raw.isdigit():
+        return ".".join(str(int(raw[i : i + 2])) for i in range(0, 8, 2))
+    return raw
+
+
 @dataclass(frozen=True, slots=True)
 class TopologyFingerprint:
     topology: Topology
@@ -39,7 +46,7 @@ class TopologyDetector:
         self._connector = connector
 
     def detect(self) -> TopologyFingerprint:
-        version = self._safe_attr("DISPLAY QMGR VERSION", "VERSION")
+        version = normalize_mq_version(self._safe_attr("DISPLAY QMGR VERSION", "VERSION"))
         platform = self._safe_attr("DISPLAY QMGR PLATFORM", "PLATFORM")
         qmstatus_raw = self._safe_raw("DISPLAY QMSTATUS")
 

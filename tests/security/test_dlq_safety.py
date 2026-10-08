@@ -38,3 +38,12 @@ def test_pymqi_browse_dlq_zeroes_message_buffer() -> None:
     )
     # And must not return raw bytes anywhere in its flow
     assert "raw_msg" not in src.split("return ")[-1], "browse_dlq must not return raw_msg"
+
+
+def test_pymqi_browse_dlq_never_opens_for_input() -> None:
+    """Browsing must not need +get authority or contend with a DLQ handler."""
+    from mq_sentinel.connectors import pymqi_connector
+
+    src = inspect.getsource(pymqi_connector.PymqiConnector.browse_dlq)
+    assert "MQOO_BROWSE" in src
+    assert "MQOO_INPUT" not in src

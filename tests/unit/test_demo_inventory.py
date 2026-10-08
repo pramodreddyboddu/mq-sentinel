@@ -39,3 +39,26 @@ def test_demo_qm_not_seeded_outside_local_dev(
 
 def test_demo_fixtures_dir_resolves_from_checkout() -> None:
     assert (_demo_fixtures_dir() / "mqsc" / "DISPLAY_CHSTATUS_ALL__ALL.json").is_file()
+
+
+def test_connector_auto_goes_live_with_inventory() -> None:
+    s = Settings()
+    s.server.connector = "auto"
+    s.server.inventory_dir = None
+    assert s.server.resolved_connector() == "fixture"
+    s.server.inventory_dir = "/etc/mq-sentinel"
+    assert s.server.resolved_connector() == "pymqi"
+    s.server.connector = "fixture"
+    assert s.server.resolved_connector() == "fixture"
+
+
+def test_prod_refuses_demo_fixtures() -> None:
+    s = Settings()
+    s.server.environment = "prod"
+    s.server.inventory_dir = None
+    s.server.connector = "auto"
+    s.auth.disable_auth_for_local_dev = False
+    with pytest.raises(RuntimeError, match="fixture connector is not permitted"):
+        s.assert_production_safe()
+    s.server.inventory_dir = "/etc/mq-sentinel"
+    s.assert_production_safe()

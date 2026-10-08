@@ -10,6 +10,7 @@ from mq_sentinel.inventory.models import QMEntry
 class InventoryRegistry(Protocol):
     def get(self, qm_name: str) -> QMEntry: ...
     def list_for_tenant(self, tenant: str) -> list[QMEntry]: ...
+    def list_all(self) -> list[QMEntry]: ...
 
 
 class InMemoryInventory:
@@ -24,6 +25,9 @@ class InMemoryInventory:
 
     def list_for_tenant(self, tenant: str) -> list[QMEntry]:
         return [e for e in self._entries.values() if e.tenant == tenant]
+
+    def list_all(self) -> list[QMEntry]:
+        return list(self._entries.values())
 
 
 def load_from_yaml(path: str) -> InMemoryInventory:

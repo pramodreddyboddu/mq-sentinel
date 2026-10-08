@@ -51,7 +51,7 @@ grok mcp add mq-sentinel \
        --security-opt no-new-privileges:true \
        -e MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV \
        -e MQS_SERVER_ENVIRONMENT \
-       ghcr.io/pramodreddyboddu/mq-sentinel:0.3.0 \
+       ghcr.io/pramodreddyboddu/mq-sentinel:0.4.0 \
        serve --transport stdio
 ```
 

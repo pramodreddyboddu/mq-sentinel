@@ -29,6 +29,12 @@ spec:
             - name: {{ $k }}
               value: "{{ $v }}"
             {{- end }}
+            - name: MQS_SERVER_SECRETS_DIR
+              value: /var/secrets
+            {{- if .Values.inventory.configMap.enabled }}
+            - name: MQS_SERVER_INVENTORY_DIR
+              value: /etc/mq-sentinel
+            {{- end }}
             {{- if .Values.oidc.issuer }}
             - name: MQS_AUTH_OIDC_ISSUER
               value: "{{ .Values.oidc.issuer }}"
@@ -75,8 +81,12 @@ spec:
           emptyDir: {}
         - name: secrets
           secret:
-            secretName: {{ .Release.Name }}-mq-credentials
+            secretName: {{ .Values.mqCredentials.secretName | default (printf "%s-mq-credentials" .Release.Name) }}
             defaultMode: 0400
+            {{- with .Values.mqCredentials.items }}
+            items:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
         {{- if .Values.inventory.configMap.enabled }}
         - name: inventory
           configMap:

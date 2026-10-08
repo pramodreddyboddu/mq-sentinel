@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/pramodreddyboddu/mq-sentinel
-  tag: "0.3.0"   # Pin to a known good release for org deploys. Update on new releases.
+  tag: "0.4.0"   # Pin to a known good release for org deploys. Update on new releases.
   pullPolicy: IfNotPresent
 
 replicaCount: 2   # Increase for larger orgs / higher query volume
@@ -97,18 +97,22 @@ affinity:
                   - mq-sentinel
           topologyKey: kubernetes.io/hostname
 
-# Inventory configuration (for multiple QMs)
+# Inventory: a ConfigMap of *.yaml files (schema: examples/org/inventory-example.yaml),
+# mounted at /etc/mq-sentinel and loaded via MQS_SERVER_INVENTORY_DIR.
+# MQS_SERVER_ENVIRONMENT=prod refuses to start without one (no demo data in prod).
 inventory:
-  # For small orgs: mount a ConfigMap or Secret with inventory.yaml
-  # For large orgs: implement external registry (see docs)
   configMap:
     enabled: false
     name: mq-sentinel-inventory
-  # Example volume mount for inventory file
-  # volumeMounts:
-  #   - name: inventory
-  #     mountPath: /etc/mq-sentinel/inventory.yaml
-  #     subPath: inventory.yaml
+
+# MQ credentials Secret, mounted at /var/secrets (MQS_SERVER_SECRETS_DIR).
+# Each inventory secret_ref is a directory holding `username` and `password`.
+# Secret keys can't contain "/", so map them to <secret_ref>/<file> paths:
+mqCredentials:
+  secretName: ""   # default: <release>-mq-credentials
+  items: []
+  # - {key: prod-eu1-username, path: prod/eu1/username}
+  # - {key: prod-eu1-password, path: prod/eu1/password}
 
 # Monitoring annotations for Prometheus service discovery
 podAnnotations:

@@ -22,13 +22,15 @@ from mq_sentinel.auth.oidc import (
     RealOIDCVerifier,
     StubOIDCVerifier,
 )
-from mq_sentinel.auth.rbac import Action, authorize
+from mq_sentinel.auth.rbac import Action, AuthorizationError, authorize
 from mq_sentinel.config import Settings, load_settings
 from mq_sentinel.connectors.base import MQConnector
 from mq_sentinel.connectors.fixture import FixtureConnector
+from mq_sentinel.connectors.pymqi_connector import PymqiConnector
 from mq_sentinel.inventory.models import QMEntry, Topology
 from mq_sentinel.inventory.registry import InMemoryInventory, InventoryRegistry
 from mq_sentinel.secrets.backend import SecretsBackend
+from mq_sentinel.secrets.filesystem import FilesystemSecrets
 from mq_sentinel.security import RateLimiter, sanitize_mq_output
 from mq_sentinel.telemetry import configure_telemetry, get_logger
 from mq_sentinel.tools.channels import TOOL_NAME as CHANNELS_TOOL_NAME
@@ -88,6 +90,16 @@ class _NullSecrets:
         return MQCredential(user="fixture", password="fixture")  # noqa: S106
 
 
+class _UnconfiguredSecrets:
+    """Live mode without a secrets root: fail the tool call with a clear fix."""
+
+    def resolve(self, secret_ref: str) -> Any:
+        raise RuntimeError(
+            "live connections need credentials: set MQS_SERVER_SECRETS_DIR to a directory "
+            f"containing {secret_ref}/username and {secret_ref}/password"
+        )
+
+
 class MQSentinelServer:
     """Security-wrapped tool dispatcher."""
 
@@ -110,15 +122,24 @@ class MQSentinelServer:
         )
         self._verifier: OIDCVerifier = verifier or self._default_verifier()
         self._inventory: InventoryRegistry = inventory or self._resolve_inventory()
-        self._secrets: SecretsBackend = secrets or _NullSecrets()
+        self._connector_mode = self._settings.server.resolved_connector()
+        self._secrets: SecretsBackend = secrets or self._resolve_secrets()
         self._connector_factory: Callable[[], MQConnector] = (
-            connector_factory or self._default_connector_factory
+            connector_factory or self._default_connector_factory()
         )
 
-    @staticmethod
-    def _default_connector_factory() -> MQConnector:
-        # In dev, fall back to a fixture connector pointed at demo-sandbox.
-        return FixtureConnector(_demo_fixtures_dir())
+    def _default_connector_factory(self) -> Callable[[], MQConnector]:
+        if self._connector_mode == "pymqi":
+            return PymqiConnector
+        return lambda: FixtureConnector(_demo_fixtures_dir())
+
+    def _resolve_secrets(self) -> SecretsBackend:
+        if self._connector_mode == "fixture":
+            return _NullSecrets()
+        secrets_dir = self._settings.server.secrets_dir
+        if not secrets_dir:
+            return _UnconfiguredSecrets()
+        return FilesystemSecrets(Path(secrets_dir).expanduser())
 
     @staticmethod
     def load_inventory_from_dir(directory: str | Path) -> InMemoryInventory:
@@ -139,7 +160,8 @@ class MQSentinelServer:
             return self.load_inventory_from_dir(Path(inv_dir))
         # Demo QM only for local dev with auth explicitly disabled — never staging/prod.
         if (
-            self._settings.auth.disable_auth_for_local_dev
+            self._settings.server.resolved_connector() == "fixture"
+            and self._settings.auth.disable_auth_for_local_dev
             and self._settings.server.environment == "dev"
         ):
             return _demo_inventory()
@@ -177,10 +199,29 @@ class MQSentinelServer:
                 "status": "ok",
                 "version": __version__,
                 "environment": self._settings.server.environment,
+                "connector": "live" if self._connector_mode == "pymqi" else "demo-fixtures",
                 "principal": principal.subject,
+                "queue_managers": [
+                    {
+                        "qm_name": e.qm_name,
+                        "environment": e.environment,
+                        "topology_hint": e.topology_hint.value,
+                    }
+                    for e in self._inventory.list_all()
+                    if self._can_read(principal, e)
+                ],
             }
         )
         return result
+
+    @staticmethod
+    def _can_read(principal: Principal, entry: QMEntry) -> bool:
+        action = Action.READ_PROD if entry.environment == "prod" else Action.READ_NONPROD
+        try:
+            authorize(principal, action)
+        except AuthorizationError:
+            return False
+        return True
 
     def diagnose_channels(self, qm_name: str, principal: Principal) -> dict[str, Any]:
         # RBAC: prod QMs require prod-read role.
@@ -425,7 +466,12 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
     # with OIDC bearer tokens (lands in a later commit).
     dev_token = "stdio-local"  # noqa: S105
 
-    @mcp.tool(description="Health probe — confirms the MCP is responding.")
+    @mcp.tool(
+        description=(
+            "Health probe. Confirms the server is up, says whether it is using live "
+            "connections or demo fixtures, and lists the queue managers you can diagnose."
+        ),
+    )
     def health() -> dict[str, Any]:
         return srv.dispatch(token=dev_token, tool="health", params={})
 

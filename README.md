@@ -12,7 +12,7 @@ I built this as a serious side project to solve a real, high-stakes problem in e
 [![tests 271 passing](https://img.shields.io/badge/tests-271%20passing-success.svg)]()
 [![Org-Ready](https://img.shields.io/badge/org--ready-✓-blue)](docs/ORG-READINESS-PLAN.md)
 
-> **0.3.0** — 8 diagnostic tools across all 10 IBM MQ flavors. Read-only by design. Prompt-injection firewall. OIDC + RBAC. Hash-chained audit. Verified IBM Knowledge Center citations (CI-enforced). Production Helm with HPA + air-gapped packaging.
+> **0.4.0** — 8 diagnostic tools across all 10 IBM MQ flavors. Read-only by design. Prompt-injection firewall. OIDC + RBAC. Hash-chained audit. Verified IBM Knowledge Center citations (CI-enforced). Production Helm with HPA + air-gapped packaging.
 
 **GitHub:** https://github.com/pramodreddyboddu/mq-sentinel  
 **Live Demo:** https://mq-sentinel.io  
@@ -227,6 +227,10 @@ Standalone · Multi-Instance QM · RDQM · Native HA · Native HA + CRR · Unifo
 | **Air-gapped (banks/gov)** | Mirror RPM internally, sign with org GPG, deploy via Satellite / Aptly | 1 evening |
 
 Full guide: [docs/INSTALL.md](docs/INSTALL.md). For IBM MQ client libs: [docs/byom.md](docs/byom.md).
+
+### Connect real queue managers
+
+Out of the box MQ-Sentinel serves the bundled demo QM (`DEMO_QM`). To diagnose your own QMs, set `MQS_SERVER_INVENTORY_DIR` (QM list) and `MQS_SERVER_SECRETS_DIR` (credentials), and install the `mq` extra (`pymqi`, which needs the IBM MQ client). The server then connects live over a display-only channel. [docs/onboard-new-qm.md](docs/onboard-new-qm.md) has the least-privilege `setmqaut` / CHLAUTH setup.
 
 ## Quick start (developer / contributor)
 

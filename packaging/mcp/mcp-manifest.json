@@ -2,7 +2,7 @@
   "$schema": "https://modelcontextprotocol.io/schemas/server-manifest-v1.json",
   "name": "mq-sentinel",
   "displayName": "MQ-Sentinel",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Production-grade, read-only IBM MQ diagnostic MCP server for AI agents. 8 tools across 10 MQ flavors. Returns Root Cause + Fix Steps + verified IBM KC citations. Includes `mq-sentinel doctor`, `tools`, and `info` for great DX. Full security model + org-readiness artifacts.",
   "author": {
     "name": "Pramod Boddu",

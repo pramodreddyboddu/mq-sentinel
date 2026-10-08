@@ -20,8 +20,13 @@ Every MQ-Sentinel tool is read-only and takes a `qm_name`. Pick the narrowest to
 
 ## How to answer
 
-1. If the user didn't name a queue manager, ask for one. In demo mode the only QM is `DEMO_QM`.
+1. If the user didn't name a queue manager, call `health`. It lists the queue managers you can diagnose and whether the server is live or in demo mode (demo has only `DEMO_QM`). Ask the user which one if more than one fits.
 2. Call the tool. Report findings by severity, highest first.
 3. Keep the tool's evidence and IBM Knowledge Center citations attached to each finding. Don't invent reason codes, causes, or links that the tool didn't return.
 4. Present suggested MQSC as commands for the user to run. MQ-Sentinel never changes a queue manager, and neither should you: don't propose `RESET`, `RESOLVE`, `CLEAR`, `DELETE`, or DLQ reprocessing as already done. Label any change command as something the user decides to run.
-5. If a tool returns an error such as `QM 'X' not in inventory`, say so plainly and point the user to the plugin README for configuring an inventory.
+5. If a tool returns an error, explain it plainly:
+   - `QM 'X' not in inventory`: the QM isn't configured. Show the names `health` returns.
+   - `failed to connect ... (MQRC 2035)`: the MQ user or CHLAUTH rule doesn't allow MQ-Sentinel in. `2059`/`2538`: QM or listener unreachable. `2393`/`2397`: TLS mismatch.
+   - `live connections need credentials`: `MQS_SERVER_SECRETS_DIR` isn't set.
+   - Point to `docs/onboard-new-qm.md` in the MQ-Sentinel repo for the setup steps.
+6. In live mode against a remote QM, RDQM and multi-instance host checks are skipped (they need MQ-Sentinel on the QM host), and AMQERR logs aren't read. Say so instead of reporting those areas as healthy.

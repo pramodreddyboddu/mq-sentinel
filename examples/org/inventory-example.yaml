@@ -1,38 +1,50 @@
-# Example inventory for a mid-to-large organization
-# Mount this as ConfigMap or use with external registry (roadmap item)
+# Example inventory for a mid-to-large organization.
+# Point MQS_SERVER_INVENTORY_DIR at the directory holding this file (or mount it
+# as a ConfigMap). Every *.yaml in that directory is loaded at startup.
+#
+# Credentials never live here. `secret_ref` names a directory under
+# MQS_SERVER_SECRETS_DIR containing `username` and `password` files (plus
+# optional `keystore_path`, `keystore_password`, `cert_label` for TLS).
+#
+# Use a dedicated, display-only SVRCONN channel and MQ user. See
+# docs/onboard-new-qm.md for the setmqaut / CHLAUTH grants.
 
 qms:
-  - name: PROD_QM_EU1
+  - qm_name: PROD_QM_EU1          # Primary EU production QM for payments
     host: mq-prod-eu1.internal
     port: 1414
-    channel: SYSTEM.ADMIN.SVRCONN
-    ssl: true
-    tier: prod
-    description: "Primary EU production QM for payments"
+    channel: MQS.SVRCONN
+    environment: prod
+    topology_hint: native_ha
+    mq_version_hint: "9.4"
+    secret_ref: prod/eu1
+    cipher_spec: ANY_TLS13_OR_HIGHER
 
-  - name: PROD_QM_US1
+  - qm_name: PROD_QM_US1          # US production QM
     host: mq-prod-us1.internal
     port: 1414
-    channel: SYSTEM.ADMIN.SVRCONN
-    ssl: true
-    tier: prod
-    description: "US production QM"
+    channel: MQS.SVRCONN
+    environment: prod
+    topology_hint: rdqm
+    secret_ref: prod/us1
+    cipher_spec: ANY_TLS13_OR_HIGHER
 
-  - name: NONPROD_QM_EU1
+  - qm_name: NONPROD_QM_EU1       # Non-prod for EU testing
     host: mq-np-eu1.internal
     port: 1414
-    channel: SYSTEM.ADMIN.SVRCONN
-    ssl: false
-    tier: nonprod
-    description: "Non-prod for EU testing"
+    channel: MQS.SVRCONN
+    environment: nonprod
+    topology_hint: uniform_cluster
+    secret_ref: nonprod/eu1
 
-  - name: ZOS_QSG_MAIN
+  - qm_name: ZOS_QSG_MAIN         # z/OS queue-sharing group, mainframe core
     host: mq-zos-main.internal
     port: 1414
-    channel: SYSTEM.ADMIN.SVRCONN
-    ssl: true
-    tier: prod
-    description: "z/OS Queue Sharing Group - mainframe core"
+    channel: MQS.SVRCONN
+    environment: prod
+    topology_hint: zos_qsg
+    secret_ref: prod/zos-main
+    cipher_spec: ANY_TLS12_OR_HIGHER
 
-# For very large estates, replace with a small internal service or database-backed registry.
-# The InMemoryInventory is suitable up to ~50-100 QMs.
+# InMemoryInventory is fine up to a few hundred QMs. For very large estates,
+# back the InventoryRegistry protocol with an internal service or database.

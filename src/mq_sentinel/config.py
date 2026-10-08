@@ -61,6 +61,17 @@ class ServerConfig(BaseSettings):
     inventory_dir: str | None = None
     """Directory of YAML files for large org fleet inventory (loaded at startup)."""
 
+    connector: Literal["auto", "fixture", "pymqi"] = "auto"
+    """auto: live pymqi when an inventory is configured, else the demo fixtures."""
+
+    secrets_dir: str | None = None
+    """Filesystem secrets root (one subdirectory per secret_ref). Required for pymqi."""
+
+    def resolved_connector(self) -> Literal["fixture", "pymqi"]:
+        if self.connector == "auto":
+            return "pymqi" if self.inventory_dir else "fixture"
+        return self.connector
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="MQS_", extra="forbid")
@@ -75,6 +86,11 @@ class Settings(BaseSettings):
         if self.server.environment == "prod" and self.auth.disable_auth_for_local_dev:
             raise RuntimeError(
                 "disable_auth_for_local_dev is not permitted in production environment"
+            )
+        if self.server.environment == "prod" and self.server.resolved_connector() == "fixture":
+            raise RuntimeError(
+                "the demo fixture connector is not permitted in production environment; "
+                "set MQS_SERVER_INVENTORY_DIR (and MQS_SERVER_SECRETS_DIR) for live QMs"
             )
 
 

@@ -63,9 +63,16 @@ class FilesystemSecrets:
 
     @staticmethod
     def _check_permissions(target: Path) -> None:
-        mode = target.stat().st_mode
-        if mode & (stat.S_IRWXO | stat.S_IWGRP):
+        # The directory may be traversable (K8s Secret volumes create 0755 dirs),
+        # but nobody else may write to it. Secret files must not be readable by
+        # others or writable by anyone but the owner.
+        if target.stat().st_mode & (stat.S_IWOTH | stat.S_IWGRP):
             raise PermissionError(
-                f"secret dir {target} has unsafe permissions: "
-                f"must not be world-readable or group-writable"
+                f"secret dir {target} has unsafe permissions: must not be group/world-writable"
             )
+        for path in target.iterdir():
+            if path.is_file() and path.stat().st_mode & (stat.S_IRWXO | stat.S_IWGRP):
+                raise PermissionError(
+                    f"secret file {path.name} has unsafe permissions: "
+                    "must not be world-readable or group-writable (chmod 600)"
+                )

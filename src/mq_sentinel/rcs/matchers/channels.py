@@ -55,7 +55,10 @@ def match_channel_failures(
         except (TypeError, ValueError):
             reason = 0
 
-        if not _bad_chstatus_status(status) and reason == 0:
+        # Live CHSTATUS reports in-doubt batches as INDOUBT(YES), not STATUS(INDOUBT).
+        in_doubt = status.upper() == "INDOUBT" or str(ch.get("INDOUBT", "")).upper() == "YES"
+
+        if not _bad_chstatus_status(status) and reason == 0 and not in_doubt:
             continue
 
         if reason == 2035:
@@ -66,7 +69,7 @@ def match_channel_failures(
             findings.append(_finding_conn_error(name, ch, reason, registry, mq_version))
             continue
 
-        if status.upper() == "INDOUBT":
+        if in_doubt:
             findings.append(_finding_indoubt(name, ch))
             continue
 

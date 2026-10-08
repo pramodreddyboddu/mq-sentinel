@@ -55,7 +55,7 @@ jobs:
           dnf install -y epel-release   # dpkg (for .deb builds) lives in EPEL
           dnf install -y --setopt=install_weak_deps=False \
               python3.12 python3.12-devel python3.12-pip \
-              ruby ruby-devel rpm-build dpkg gcc make tar git ca-certificates   # curl-minimal is preinstalled
+              ruby ruby-devel rubygem-json rpm-build dpkg gcc make tar git ca-certificates   # curl-minimal is preinstalled
           gem install --no-document fpm
       - uses: actions/checkout@v4
       - name: Install uv

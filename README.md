@@ -222,8 +222,8 @@ Standalone · Multi-Instance QM · RDQM · Native HA · Native HA + CRR · Unifo
 | **Solo / startup (prod)** | Same, with `MQS_AUTH_OIDC_*` env vars exported | 5 min |
 | **Mid-org Kubernetes** | `helm install mq-sentinel oci://ghcr.io/pramodreddyboddu/charts/mq-sentinel --set oidc.issuer=… --set oidc.audience=… --set oidc.jwksUrl=…` | 30 min |
 | **Local K8s POC (no live MQ)** | `cd examples/kind && ./install.sh` | 5 min |
-| **RHEL / Rocky / OEL** | `sudo dnf install https://github.com/pramodreddyboddu/mq-sentinel/releases/latest/download/mq-sentinel-0.1.0-1.x86_64.rpm` | 5 min |
-| **Debian / Ubuntu** | `sudo apt install ./mq-sentinel_0.1.0_amd64.deb` | 5 min |
+| **RHEL / Rocky / OEL** | `sudo dnf install https://github.com/pramodreddyboddu/mq-sentinel/releases/latest/download/mq-sentinel-0.4.0-1.x86_64.rpm` | 5 min |
+| **Debian / Ubuntu** | `sudo apt install ./mq-sentinel_0.4.0_amd64.deb` | 5 min |
 | **Air-gapped (banks/gov)** | Mirror RPM internally, sign with org GPG, deploy via Satellite / Aptly | 1 evening |
 
 Full guide: [docs/INSTALL.md](docs/INSTALL.md). For IBM MQ client libs: [docs/byom.md](docs/byom.md).

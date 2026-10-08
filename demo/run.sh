@@ -283,7 +283,7 @@ echo -e "${BOLD}Helm (Kubernetes / mid-org):${NC}"
 echo -e "  ${DIM}helm install mq-sentinel oci://ghcr.io/pramodreddyboddu/charts/mq-sentinel${NC}"
 echo
 echo -e "${BOLD}RPM / DEB (regulated / air-gapped):${NC}"
-echo -e "  ${DIM}sudo dnf install mq-sentinel-0.1.0-1.x86_64.rpm${NC}"
+echo -e "  ${DIM}sudo dnf install mq-sentinel-0.4.0-1.x86_64.rpm${NC}"
 echo
 echo -e "${BOLD}Homebrew (Mac dev):${NC}"
 echo -e "  ${DIM}brew install pramodreddyboddu/tap/mq-sentinel${NC}"

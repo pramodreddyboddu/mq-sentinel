@@ -189,7 +189,7 @@ Satellite / Aptly / SUSE Manager / Anaconda kickstart.
 ### RHEL 9 / Rocky 9 / Oracle Linux 9 / Amazon Linux 2023
 
 ```bash
-sudo dnf install -y https://github.com/pramodreddyboddu/mq-sentinel/releases/latest/download/mq-sentinel-0.1.0-1.x86_64.rpm
+sudo dnf install -y https://github.com/pramodreddyboddu/mq-sentinel/releases/latest/download/mq-sentinel-0.4.0-1.x86_64.rpm
 
 # Edit OIDC + inventory
 sudo $EDITOR /etc/mq-sentinel/mq-sentinel.env
@@ -209,7 +209,7 @@ sudo journalctl -u mq-sentinel -f
 ### Debian 12 / Ubuntu 22.04+
 
 ```bash
-sudo apt install -y https://github.com/pramodreddyboddu/mq-sentinel/releases/latest/download/mq-sentinel_0.1.0_amd64.deb
+sudo apt install -y https://github.com/pramodreddyboddu/mq-sentinel/releases/latest/download/mq-sentinel_0.4.0_amd64.deb
 sudo systemctl start mq-sentinel
 ```
 
@@ -235,8 +235,8 @@ sudo systemctl start mq-sentinel
 ```bash
 git clone https://github.com/pramodreddyboddu/mq-sentinel.git
 cd mq-sentinel
-make rpm        # → dist/pkg/mq-sentinel-0.1.0-1.x86_64.rpm
-make deb        # → dist/pkg/mq-sentinel_0.1.0_amd64.deb
+make rpm        # → dist/pkg/mq-sentinel-0.4.0-1.x86_64.rpm
+make deb        # → dist/pkg/mq-sentinel_0.4.0_amd64.deb
 make pkg        # both
 ```
 
@@ -247,8 +247,8 @@ Requires `fpm` (`gem install fpm`) and Python 3.12.
 After building, sign with your org's GPG key:
 
 ```bash
-rpmsign --addsign dist/pkg/mq-sentinel-0.1.0-1.x86_64.rpm
-dpkg-sig --sign builder dist/pkg/mq-sentinel_0.1.0_amd64.deb
+rpmsign --addsign dist/pkg/mq-sentinel-0.4.0-1.x86_64.rpm
+dpkg-sig --sign builder dist/pkg/mq-sentinel_0.4.0_amd64.deb
 ```
 
 Then publish to your internal repo. End-user install becomes:

@@ -24,7 +24,7 @@ sbom.json
 *.kdb
 *.sth
 *.rdb
-secrets/
+/secrets/
 .claude/
 output/
 tmp/

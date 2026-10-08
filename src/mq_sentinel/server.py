@@ -26,6 +26,7 @@ from mq_sentinel.auth.rbac import Action, authorize
 from mq_sentinel.config import Settings, load_settings
 from mq_sentinel.connectors.base import MQConnector
 from mq_sentinel.connectors.fixture import FixtureConnector
+from mq_sentinel.inventory.models import QMEntry, Topology
 from mq_sentinel.inventory.registry import InMemoryInventory, InventoryRegistry
 from mq_sentinel.secrets.backend import SecretsBackend
 from mq_sentinel.security import RateLimiter, sanitize_mq_output
@@ -51,6 +52,31 @@ from mq_sentinel.tools.zos import diagnose_zos_qsg_issues
 def _hash_params(params: dict[str, Any]) -> str:
     canonical = orjson.dumps(params, option=orjson.OPT_SORT_KEYS)
     return hashlib.sha256(canonical).hexdigest()
+
+
+def _demo_fixtures_dir() -> Path:
+    """Fixtures bundled in the wheel, else the repo checkout's demo-sandbox."""
+    bundled = Path(__file__).resolve().parent / "_demo_fixtures"
+    if bundled.is_dir():
+        return bundled
+    return Path(__file__).resolve().parents[2] / "demo-sandbox" / "fixtures"
+
+
+def _demo_inventory() -> InMemoryInventory:
+    """Single fixture-backed QM so a fresh `uvx mq-sentinel serve` is usable."""
+    return InMemoryInventory(
+        [
+            QMEntry(
+                qm_name="DEMO_QM",
+                host="localhost",
+                port=1414,
+                channel="APP.SVRCONN",
+                environment="dev",
+                topology_hint=Topology.STANDALONE,
+                secret_ref="demo",  # noqa: S106
+            )
+        ]
+    )
 
 
 class _NullSecrets:
@@ -92,7 +118,7 @@ class MQSentinelServer:
     @staticmethod
     def _default_connector_factory() -> MQConnector:
         # In dev, fall back to a fixture connector pointed at demo-sandbox.
-        return FixtureConnector(Path("./demo-sandbox/fixtures"))
+        return FixtureConnector(_demo_fixtures_dir())
 
     @staticmethod
     def load_inventory_from_dir(directory: str | Path) -> "InMemoryInventory":
@@ -110,6 +136,12 @@ class MQSentinelServer:
         inv_dir = getattr(self._settings.server, "inventory_dir", None)
         if inv_dir:
             return self.load_inventory_from_dir(Path(inv_dir))
+        # Demo QM only for local dev with auth explicitly disabled — never staging/prod.
+        if (
+            self._settings.auth.disable_auth_for_local_dev
+            and self._settings.server.environment == "dev"
+        ):
+            return _demo_inventory()
         return InMemoryInventory()
 
     def _default_verifier(self) -> OIDCVerifier:

@@ -6,6 +6,13 @@ All notable changes to MQ-Sentinel are documented here. The format is loosely ba
 
 ---
 
+## [0.3.1] — Claude Code plugin + install fixes
+
+- Claude Code plugin marketplace: `/plugin marketplace add pramodreddyboddu/mq-sentinel`. Bundles the MCP server (via `uvx`) and an `mq-triage` skill.
+- Fixed: `mq_sentinel.secrets` was excluded from git and the 0.3.0 wheel by a broad `secrets/` ignore rule, so `uvx mq-sentinel serve` crashed on import. The rule now applies to the repo root only.
+- Fixed: pinned `mcp<2`. mcp 2.x removed `FastMCP`, so fresh installs failed to start.
+- Demo fixtures ship inside the wheel, and `serve` seeds a `DEMO_QM` entry when `environment=dev` and local-dev auth is on. A fresh install works from any directory.
+
 ## [Unreleased] — MCP distribution (any client)
 
 - Official MCP Registry manifest at repo-root `server.json` (`io.github.pramodreddyboddu/mq-sentinel`).

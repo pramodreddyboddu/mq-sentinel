@@ -1,6 +1,6 @@
 [project]
 name = "mq-sentinel"
-version = "0.3.0"
+version = "0.3.1"
 description = "MQ-Sentinel — production-grade, read-only IBM MQ diagnostic MCP server for AI agents. Zero hallucinations. Built for trust in enterprise environments."
 readme = "README.md"
 requires-python = ">=3.12"
@@ -16,7 +16,7 @@ classifiers = [
 ]
 
 dependencies = [
-    "mcp>=1.2.0",
+    "mcp>=1.2.0,<2",
     "pydantic>=2.8",
     "pydantic-settings>=2.4",
     "authlib>=1.3",
@@ -58,6 +58,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mq_sentinel"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"demo-sandbox/fixtures" = "mq_sentinel/_demo_fixtures"
 
 [tool.ruff]
 line-length = 100

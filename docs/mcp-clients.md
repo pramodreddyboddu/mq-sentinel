@@ -96,6 +96,17 @@ Restart Claude Desktop after saving.
 
 ## Claude Code
 
+Easiest: install the plugin. It bundles the server (from PyPI) and an MQ triage skill:
+
+```
+/plugin marketplace add pramodreddyboddu/mq-sentinel
+/plugin install mq-sentinel@mq-sentinel
+```
+
+Details and config: [plugins/mq-sentinel/README.md](../plugins/mq-sentinel/README.md).
+
+Or add the server by hand:
+
 ```bash
 claude mcp add mq-sentinel -- uv run --directory /ABS/PATH/TO/mq-sentinel mq-sentinel serve
 ```

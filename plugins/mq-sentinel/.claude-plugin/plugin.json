@@ -1,0 +1,13 @@
+{
+  "name": "mq-sentinel",
+  "version": "0.3.1",
+  "description": "Read-only IBM MQ diagnostics for AI agents. Cited root cause, never destructive.",
+  "author": {
+    "name": "Pramod Boddu",
+    "url": "https://github.com/pramodreddyboddu"
+  },
+  "homepage": "https://github.com/pramodreddyboddu/mq-sentinel",
+  "repository": "https://github.com/pramodreddyboddu/mq-sentinel",
+  "license": "Proprietary",
+  "keywords": ["ibm-mq", "mcp", "diagnostics", "observability", "read-only"]
+}

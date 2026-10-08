@@ -217,6 +217,7 @@ Standalone · Multi-Instance QM · RDQM · Native HA · Native HA + CRR · Unifo
 
 | Scenario | Command | Time |
 |---|---|---|
+| **Claude Code plugin** | `/plugin marketplace add pramodreddyboddu/mq-sentinel` then `/plugin install mq-sentinel@mq-sentinel` ([details](plugins/mq-sentinel/README.md)) | 1 min |
 | **Solo / startup laptop (dev)** | `curl -fsSL https://raw.githubusercontent.com/pramodreddyboddu/mq-sentinel/main/scripts/install.sh \| MQS_DEV_MODE=true MQS_DEV_MODE_ACK_INSECURE=yes bash` | 5 min |
 | **Solo / startup (prod)** | Same, with `MQS_AUTH_OIDC_*` env vars exported | 5 min |
 | **Mid-org Kubernetes** | `helm install mq-sentinel oci://ghcr.io/pramodreddyboddu/charts/mq-sentinel --set oidc.issuer=… --set oidc.audience=… --set oidc.jwksUrl=…` | 30 min |

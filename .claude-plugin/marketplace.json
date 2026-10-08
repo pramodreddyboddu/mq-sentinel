@@ -1,0 +1,20 @@
+{
+  "name": "mq-sentinel",
+  "owner": {
+    "name": "Pramod Boddu",
+    "url": "https://github.com/pramodreddyboddu"
+  },
+  "metadata": {
+    "description": "Read-only IBM MQ diagnostics for Claude Code."
+  },
+  "plugins": [
+    {
+      "name": "mq-sentinel",
+      "source": "./plugins/mq-sentinel",
+      "description": "Read-only IBM MQ diagnostic MCP server: channels, DLQ, clusters, Native HA, RDQM, z/OS QSG, multi-instance. Cited root cause, never destructive.",
+      "version": "0.3.1",
+      "category": "devops",
+      "keywords": ["ibm-mq", "mcp", "diagnostics", "observability", "read-only"]
+    }
+  ]
+}

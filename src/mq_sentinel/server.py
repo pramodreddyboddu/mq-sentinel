@@ -121,10 +121,11 @@ class MQSentinelServer:
         return FixtureConnector(_demo_fixtures_dir())
 
     @staticmethod
-    def load_inventory_from_dir(directory: str | Path) -> "InMemoryInventory":
+    def load_inventory_from_dir(directory: str | Path) -> InMemoryInventory:
         """Load all .yaml files from a directory (convenient for large org fleet management)."""
-        from mq_sentinel.inventory.registry import load_from_multiple
         import glob
+
+        from mq_sentinel.inventory.registry import load_from_multiple
 
         paths = sorted(glob.glob(str(Path(directory) / "*.yaml")))
         if not paths:

@@ -89,7 +89,7 @@ def doctor() -> None:
         print(f"  Auth disabled for local dev: {settings.auth.disable_auth_for_local_dev}")
         print(f"  Audit log: {settings.audit.log_path}")
         print(f"  Read-only enforcement: {settings.security.enforce_readonly}")
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — doctor reports any failure
         print(f"✗ Failed to load configuration: {exc}")
         pysys.exit(2)
 
@@ -106,32 +106,53 @@ def doctor() -> None:
             audit_path.touch()
             audit_path.unlink(missing_ok=True)
             print("✓ Audit log path is writable")
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 — doctor reports any failure
         print(f"✗ Audit log path problem: {exc}")
 
     print()
     print("Doctor complete. Most issues are fixed by:")
-    print("  - uv sync --all-extras --dev")
+    print("  - uv sync --extra dev")
     print("  - Setting the right MQS_* environment variables")
     print("  - Running inside the official container image")
 
 
 @app.command("tools")
 def list_tools(
-    json_output: bool = typer.Option(False, "--json", "-j", help="Output as JSON for scripting / MCP clients"),
+    json_output: bool = typer.Option(
+        False, "--json", "-j", help="Output as JSON for scripting / MCP clients"
+    ),
 ) -> None:
     """List all available diagnostic tools with short descriptions."""
     import json as _json
 
     tools = [
-        ("diagnose_failed_channels", "Channel state + AMQERR analysis (2035, 2009, 2059, INDOUBT, AMQ9202/9208/9503)"),
-        ("analyze_dlq_and_suggest_reprocessing", "Dead-letter queue inspection (HEADERS ONLY — bodies never read)"),
-        ("check_cluster_health", "Partial repos, stale CLUSQMGR, suspended members, unhealthy cluster channels"),
-        ("diagnose_native_ha_issues", "Replica state, quorum, log replay lag, split-brain, CRR lag"),
+        (
+            "diagnose_failed_channels",
+            "Channel state + AMQERR analysis (2035, 2009, 2059, INDOUBT, AMQ9202/9208/9503)",
+        ),
+        (
+            "analyze_dlq_and_suggest_reprocessing",
+            "Dead-letter queue inspection (HEADERS ONLY — bodies never read)",
+        ),
+        (
+            "check_cluster_health",
+            "Partial repos, stale CLUSQMGR, suspended members, unhealthy cluster channels",
+        ),
+        (
+            "diagnose_native_ha_issues",
+            "Replica state, quorum, log replay lag, split-brain, CRR lag",
+        ),
         ("diagnose_rdqm_issues", "Pacemaker quorum, offline nodes, DRBD state, split-brain"),
         ("diagnose_zos_qsg_issues", "QSG members, CHIN, page sets, buffer pools, CF structures"),
-        ("diagnose_multi_instance_issues", "Active/standby state, dual-active split, standby permission, failover"),
-        ("full_mq_health_check", "Composite: channels + DLQ + cluster against one QM. Executive summary + ranked findings"),
+        (
+            "diagnose_multi_instance_issues",
+            "Active/standby state, dual-active split, standby permission, failover",
+        ),
+        (
+            "full_mq_health_check",
+            "Composite: channels + DLQ + cluster against one QM. "
+            "Executive summary + ranked findings",
+        ),
     ]
 
     if json_output:
@@ -154,7 +175,10 @@ def list_tools(
 def info() -> None:
     """Show quick information about this MQ-Sentinel instance and its capabilities."""
     tools_count = 8
-    flavors = "Standalone, Multi-Instance, RDQM, Native HA (+CRR), Uniform/Traditional Cluster, z/OS QSG, Appliance, Containerized"
+    flavors = (
+        "Standalone, Multi-Instance, RDQM, Native HA (+CRR), Uniform/Traditional Cluster, "
+        "z/OS QSG, Appliance, Containerized"
+    )
 
     print("MQ-Sentinel")
     print("=" * 40)

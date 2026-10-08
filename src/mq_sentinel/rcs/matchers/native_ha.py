@@ -243,8 +243,7 @@ def _check_replicas(
                                 f"kubectl -n mq logs {name} --tail=200 | grep -E 'AMQ32|AMQ30'",
                             ),
                             notes=(
-                                "Look for AMQ3209/AMQ3035 series — those name the "
-                                "underlying cause."
+                                "Look for AMQ3209/AMQ3035 series — those name the underlying cause."
                             ),
                         ),
                     ),

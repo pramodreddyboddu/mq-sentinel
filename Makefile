@@ -14,7 +14,7 @@ help:                ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
 install:             ## Install Python deps + editable package (uv)
-	uv sync --all-extras --dev
+	uv sync --extra dev
 	uv pip install -e .
 
 dev: install         ## Alias for install + run unit tests

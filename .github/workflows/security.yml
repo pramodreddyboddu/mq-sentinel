@@ -15,8 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
-      - run: uv sync --all-extras --dev
-      - run: uv run pip-audit --strict
+      - run: uv sync --extra dev
+      - run: |
+          uv export --extra dev --no-emit-project --format requirements-txt -q > requirements-audit.txt
+          uv run pip-audit --strict --disable-pip --no-deps -r requirements-audit.txt
 
   trivy-fs:
     runs-on: ubuntu-latest

@@ -29,6 +29,7 @@ class InMemoryInventory:
 def load_from_yaml(path: str) -> InMemoryInventory:
     """Load inventory from a YAML file (useful for ConfigMap mounts in K8s)."""
     import yaml
+
     from mq_sentinel.inventory.models import QMEntry
 
     with open(path) as f:
@@ -41,6 +42,7 @@ def load_from_yaml(path: str) -> InMemoryInventory:
 def load_from_multiple(paths: list[str]) -> InMemoryInventory:
     """Load and merge inventory from multiple YAML files (for large org fleets)."""
     import yaml
+
     from mq_sentinel.inventory.models import QMEntry
 
     all_entries = []

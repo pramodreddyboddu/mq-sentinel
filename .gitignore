@@ -28,3 +28,4 @@ sbom.json
 .claude/
 output/
 tmp/
+requirements-audit.txt

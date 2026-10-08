@@ -31,7 +31,7 @@ type:                ## Run mypy (strict)
 	uv run mypy
 
 security:            ## Run security-marked tests only
-	uv run pytest -q -m security
+	uv run pytest -q -m security --no-cov
 
 ci: lint type test security  ## Full CI gauntlet (everything that runs in GHA)
 

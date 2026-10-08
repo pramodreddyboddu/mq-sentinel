@@ -34,7 +34,7 @@ jobs:
       - name: Pytest
         run: uv run pytest -q
       - name: Security tests (must be green)
-        run: uv run pytest -q -m security
+        run: uv run pytest -q -m security --no-cov
 
   sbom-and-audit:
     runs-on: ubuntu-latest
@@ -47,11 +47,28 @@ jobs:
           uv export --extra dev --no-emit-project --format requirements-txt -q > requirements-audit.txt
           uv run pip-audit --strict --disable-pip --no-deps -r requirements-audit.txt
       - name: CycloneDX SBOM
-        run: uv run cyclonedx-py requirements --of json --output sbom.json
+        run: |
+          uv export --no-dev --no-emit-project --format requirements-txt -q > requirements-runtime.txt
+          uv run cyclonedx-py requirements requirements-runtime.txt --of JSON -o sbom.json
       - uses: actions/upload-artifact@v4
         with:
           name: sbom
           path: sbom.json
+
+  helm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm lint deploy/helm
+      - name: Render with inventory + credential mapping
+        run: |
+          helm template t deploy/helm \
+            --set inventory.configMap.enabled=true \
+            --set 'mqCredentials.items[0].key=prod-eu1-username' \
+            --set 'mqCredentials.items[0].path=prod/eu1/username' > rendered.yaml
+          grep -q 'MQS_SERVER_INVENTORY_DIR' rendered.yaml
+          grep -q 'path: prod/eu1/username' rendered.yaml
 
   image-build-scan-sign:
     runs-on: ubuntu-latest

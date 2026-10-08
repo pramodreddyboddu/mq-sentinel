@@ -52,6 +52,7 @@ jobs:
     steps:
       - name: Install builders
         run: |
+          dnf install -y epel-release   # dpkg (for .deb builds) lives in EPEL
           dnf install -y --setopt=install_weak_deps=False \
               python3.12 python3.12-devel python3.12-pip \
               ruby ruby-devel rpm-build dpkg gcc make tar git ca-certificates curl
@@ -100,7 +101,7 @@ jobs:
           uvx --from "$whl" mq-sentinel tools --json
           # Catches missing modules / incompatible MCP SDK (what broke 0.3.0)
           uvx --from "$whl" python -I -c "import mq_sentinel.server, mcp.server.fastmcp"
-      - run: uv publish
+      - run: uv publish --check-url https://pypi.org/simple/   # re-runs skip files already uploaded
 
   publish-release:
     needs: [build-image, build-pkgs]

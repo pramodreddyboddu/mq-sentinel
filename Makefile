@@ -42,7 +42,7 @@ rpm: install         ## Build an RPM via fpm (requires fpm + ruby)
 	@command -v fpm >/dev/null || { echo "fpm not installed. gem install fpm"; exit 1; }
 	mkdir -p $(PKG_DIR)
 	rm -rf $(DIST_DIR)/rootfs
-	uv run python -m build --wheel
+	uv build --wheel --out-dir $(DIST_DIR)
 	mkdir -p $(DIST_DIR)/rootfs/opt/mq-sentinel
 	python3.12 -m venv $(DIST_DIR)/rootfs/opt/mq-sentinel
 	$(DIST_DIR)/rootfs/opt/mq-sentinel/bin/pip install --upgrade pip wheel
@@ -80,7 +80,7 @@ deb: install         ## Build a .deb via fpm
 	@command -v fpm >/dev/null || { echo "fpm not installed. gem install fpm"; exit 1; }
 	mkdir -p $(PKG_DIR)
 	rm -rf $(DIST_DIR)/rootfs
-	uv run python -m build --wheel
+	uv build --wheel --out-dir $(DIST_DIR)
 	mkdir -p $(DIST_DIR)/rootfs/opt/mq-sentinel
 	python3.12 -m venv $(DIST_DIR)/rootfs/opt/mq-sentinel
 	$(DIST_DIR)/rootfs/opt/mq-sentinel/bin/pip install --upgrade pip wheel

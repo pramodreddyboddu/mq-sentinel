@@ -43,6 +43,15 @@ spec:
             - name: MQS_AUTH_OIDC_AUDIENCE
               value: "{{ .Values.oidc.audience }}"
             {{- end }}
+            {{- if .Values.oidc.scopes }}
+            - name: MQS_AUTH_OIDC_SCOPES
+              value: "{{ .Values.oidc.scopes }}"
+            {{- end }}
+            {{- if and .Values.ingress.enabled (not (hasKey .Values.env "MQS_SERVER_PUBLIC_URL")) }}
+            # MCP endpoint as clients see it: OAuth resource id + allowed Host header
+            - name: MQS_SERVER_PUBLIC_URL
+              value: "{{ if .Values.ingress.tls }}https{{ else }}http{{ end }}://{{ (index .Values.ingress.hosts 0).host }}/mcp"
+            {{- end }}
             {{- if .Values.oidc.jwksUrl }}
             - name: MQS_AUTH_OIDC_JWKS_URL
               value: "{{ .Values.oidc.jwksUrl }}"

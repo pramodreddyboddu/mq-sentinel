@@ -6,13 +6,16 @@ MCP transport. The MCP stdio transport is wired by `serve_stdio()`.
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import time
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+import anyio
 import orjson
+from mcp.server.fastmcp import Context, FastMCP
 
 from mq_sentinel import __version__
 from mq_sentinel.audit import AuditEvent, AuditLogger
@@ -21,6 +24,7 @@ from mq_sentinel.auth.oidc import (
     Principal,
     RealOIDCVerifier,
     StubOIDCVerifier,
+    parse_bearer,
 )
 from mq_sentinel.auth.rbac import Action, AuthorizationError, authorize
 from mq_sentinel.config import Settings, load_settings
@@ -49,6 +53,12 @@ from mq_sentinel.tools.rdqm import TOOL_NAME as RDQM_TOOL_NAME
 from mq_sentinel.tools.rdqm import diagnose_rdqm_issues
 from mq_sentinel.tools.zos import TOOL_NAME as ZOS_TOOL_NAME
 from mq_sentinel.tools.zos import diagnose_zos_qsg_issues
+
+if TYPE_CHECKING:
+    _Ctx = Context[Any, Any, Any]
+else:
+    # FastMCP finds the context parameter only by a bare `Context` annotation.
+    _Ctx = Context
 
 
 def _hash_params(params: dict[str, Any]) -> str:
@@ -190,6 +200,14 @@ class MQSentinelServer:
                 "(MQS_AUTH_OIDC_ISSUER, MQS_AUTH_OIDC_AUDIENCE, MQS_AUTH_OIDC_JWKS_URL)"
             )
         return StubOIDCVerifier()
+
+    @property
+    def settings(self) -> Settings:
+        return self._settings
+
+    def authenticate(self, token: str) -> Principal:
+        """Verify a bearer token (raises TokenVerificationError)."""
+        return self._verifier.verify(token)
 
     # --- tool surface -----------------------------------------------------
 
@@ -445,26 +463,44 @@ class MQSentinelServer:
 # --- MCP stdio transport --------------------------------------------------
 
 
-def serve_stdio(server: MQSentinelServer | None = None) -> None:
-    """Run the MCP server over stdio.
+_INSTRUCTIONS = (
+    "Read-only IBM MQ diagnostics. Call `health` first: it says whether the server is live "
+    "or on demo fixtures and lists the queue managers you may diagnose. Every tool takes a "
+    "qm_name and only runs DISPLAY commands. Findings carry evidence and IBM documentation "
+    "links; keep them attached. Suggested MQSC is for the user to review and run, never "
+    "something you've done."
+)
 
-    The MCP SDK API is imported lazily so unit tests don't require it.
-    Each tool call is routed through `MQSentinelServer.dispatch` so all
-    security middleware (auth, rate limit, allowlist, sanitizer, audit)
-    runs uniformly regardless of transport.
+
+def build_mcp(
+    srv: MQSentinelServer,
+    *,
+    default_token: str | None,
+    **fastmcp_settings: Any,
+) -> FastMCP:
+    """Register every tool on a FastMCP app (shared by stdio and HTTP).
+
+    Each call takes the caller's bearer token from *its own* HTTP request, so
+    concurrent users of a central server never share an identity. Without a
+    request (stdio) or header, ``default_token`` is used; ``None`` means a
+    token is required. Every call goes through ``MQSentinelServer.dispatch``,
+    so auth, RBAC, rate limiting, the allowlist, the sanitizer and the audit
+    log apply identically on every transport. Dispatch blocks on MQ, so it
+    runs in a worker thread to keep the event loop free for other users.
     """
-    try:
-        from mcp.server.fastmcp import FastMCP
-    except ImportError as exc:  # pragma: no cover
-        raise RuntimeError("MCP SDK not installed. Run `uv sync --extra dev` to install.") from exc
+    mcp = FastMCP("mq-sentinel", instructions=_INSTRUCTIONS, **fastmcp_settings)
+    # Report MQ-Sentinel's version in serverInfo, not the MCP SDK's.
+    mcp._mcp_server.version = __version__
 
-    srv = server or MQSentinelServer()
-    mcp = FastMCP("mq-sentinel")
-
-    # In stdio mode the local agent is trusted; we issue a dev token for the
-    # dispatcher's audit trail. Production deployments use the HTTP transport
-    # with OIDC bearer tokens (lands in a later commit).
-    dev_token = "stdio-local"  # noqa: S105
+    async def call(ctx: _Ctx, tool: str, params: dict[str, Any]) -> dict[str, Any]:
+        request = ctx.request_context.request
+        header = request.headers.get("authorization") if request is not None else None
+        token = parse_bearer(header) or default_token
+        if not token:
+            raise PermissionError("missing bearer token")
+        return await anyio.to_thread.run_sync(
+            functools.partial(srv.dispatch, token=token, tool=tool, params=params)
+        )
 
     @mcp.tool(
         description=(
@@ -472,8 +508,8 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
             "connections or demo fixtures, and lists the queue managers you can diagnose."
         ),
     )
-    def health() -> dict[str, Any]:
-        return srv.dispatch(token=dev_token, tool="health", params={})
+    async def health(ctx: _Ctx) -> dict[str, Any]:
+        return await call(ctx, "health", {})
 
     @mcp.tool(
         description=(
@@ -482,12 +518,8 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
             "READ-ONLY."
         ),
     )
-    def diagnose_failed_channels(qm_name: str) -> dict[str, Any]:
-        return srv.dispatch(
-            token=dev_token,
-            tool=CHANNELS_TOOL_NAME,
-            params={"qm_name": qm_name},
-        )
+    async def diagnose_failed_channels(ctx: _Ctx, qm_name: str) -> dict[str, Any]:
+        return await call(ctx, CHANNELS_TOOL_NAME, {"qm_name": qm_name})
 
     @mcp.tool(
         description=(
@@ -497,12 +529,10 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
             "references. READ-ONLY."
         ),
     )
-    def analyze_dlq_and_suggest_reprocessing(qm_name: str, sample_size: int = 50) -> dict[str, Any]:
-        return srv.dispatch(
-            token=dev_token,
-            tool=DLQ_TOOL_NAME,
-            params={"qm_name": qm_name, "sample_size": sample_size},
-        )
+    async def analyze_dlq_and_suggest_reprocessing(
+        ctx: _Ctx, qm_name: str, sample_size: int = 50
+    ) -> dict[str, Any]:
+        return await call(ctx, DLQ_TOOL_NAME, {"qm_name": qm_name, "sample_size": sample_size})
 
     @mcp.tool(
         description=(
@@ -512,12 +542,8 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
             "READ-ONLY."
         ),
     )
-    def check_cluster_health(qm_name: str) -> dict[str, Any]:
-        return srv.dispatch(
-            token=dev_token,
-            tool=CLUSTER_TOOL_NAME,
-            params={"qm_name": qm_name},
-        )
+    async def check_cluster_health(ctx: _Ctx, qm_name: str) -> dict[str, Any]:
+        return await call(ctx, CLUSTER_TOOL_NAME, {"qm_name": qm_name})
 
     @mcp.tool(
         description=(
@@ -528,11 +554,11 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
             "READ-ONLY."
         ),
     )
-    def full_mq_health_check(qm_name: str, dlq_sample_size: int = 50) -> dict[str, Any]:
-        return srv.dispatch(
-            token=dev_token,
-            tool=HEALTH_CHECK_TOOL_NAME,
-            params={"qm_name": qm_name, "dlq_sample_size": dlq_sample_size},
+    async def full_mq_health_check(
+        ctx: _Ctx, qm_name: str, dlq_sample_size: int = 50
+    ) -> dict[str, Any]:
+        return await call(
+            ctx, HEALTH_CHECK_TOOL_NAME, {"qm_name": qm_name, "dlq_sample_size": dlq_sample_size}
         )
 
     @mcp.tool(
@@ -542,12 +568,8 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
             "Returns RCS findings with IBM KC references. READ-ONLY."
         ),
     )
-    def diagnose_native_ha_issues(qm_name: str) -> dict[str, Any]:
-        return srv.dispatch(
-            token=dev_token,
-            tool=NATIVE_HA_TOOL_NAME,
-            params={"qm_name": qm_name},
-        )
+    async def diagnose_native_ha_issues(ctx: _Ctx, qm_name: str) -> dict[str, Any]:
+        return await call(ctx, NATIVE_HA_TOOL_NAME, {"qm_name": qm_name})
 
     @mcp.tool(
         description=(
@@ -557,12 +579,8 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
             "with IBM KC references. READ-ONLY."
         ),
     )
-    def diagnose_rdqm_issues(qm_name: str) -> dict[str, Any]:
-        return srv.dispatch(
-            token=dev_token,
-            tool=RDQM_TOOL_NAME,
-            params={"qm_name": qm_name},
-        )
+    async def diagnose_rdqm_issues(ctx: _Ctx, qm_name: str) -> dict[str, Any]:
+        return await call(ctx, RDQM_TOOL_NAME, {"qm_name": qm_name})
 
     @mcp.tool(
         description=(
@@ -572,12 +590,8 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
             "findings with IBM KC references. READ-ONLY."
         ),
     )
-    def diagnose_zos_qsg_issues(qm_name: str) -> dict[str, Any]:
-        return srv.dispatch(
-            token=dev_token,
-            tool=ZOS_TOOL_NAME,
-            params={"qm_name": qm_name},
-        )
+    async def diagnose_zos_qsg_issues(ctx: _Ctx, qm_name: str) -> dict[str, Any]:
+        return await call(ctx, ZOS_TOOL_NAME, {"qm_name": qm_name})
 
     @mcp.tool(
         description=(
@@ -587,11 +601,15 @@ def serve_stdio(server: MQSentinelServer | None = None) -> None:
             "KC references. READ-ONLY."
         ),
     )
-    def diagnose_multi_instance_issues(qm_name: str) -> dict[str, Any]:
-        return srv.dispatch(
-            token=dev_token,
-            tool=MIQM_TOOL_NAME,
-            params={"qm_name": qm_name},
-        )
+    async def diagnose_multi_instance_issues(ctx: _Ctx, qm_name: str) -> dict[str, Any]:
+        return await call(ctx, MIQM_TOOL_NAME, {"qm_name": qm_name})
 
-    mcp.run()
+    return mcp
+
+
+def serve_stdio(server: MQSentinelServer | None = None) -> None:
+    """Run the MCP server over stdio for a single local user."""
+    srv = server or MQSentinelServer()
+    # stdio is a local, single-user transport: the calling agent is the
+    # laptop's user, identified by the local-dev token.
+    build_mcp(srv, default_token="stdio-local").run()  # noqa: S106

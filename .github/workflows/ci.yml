@@ -69,6 +69,12 @@ jobs:
             --set 'mqCredentials.items[0].path=prod/eu1/username' > rendered.yaml
           grep -q 'MQS_SERVER_INVENTORY_DIR' rendered.yaml
           grep -q 'path: prod/eu1/username' rendered.yaml
+          helm template t deploy/helm --set ingress.enabled=true \
+            --set 'ingress.tls[0].hosts[0]=mq.example.com' \
+            --set 'ingress.hosts[0].host=mq.example.com' \
+            --set 'ingress.hosts[0].paths[0].path=/' \
+            --set 'ingress.hosts[0].paths[0].pathType=Prefix' > rendered-ingress.yaml
+          grep -q 'value: "https://mq.example.com/mcp"' rendered-ingress.yaml
 
   image-build-scan-sign:
     runs-on: ubuntu-latest

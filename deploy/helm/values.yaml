@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/pramodreddyboddu/mq-sentinel
-  tag: "0.4.0"   # Pin to a known good release for org deploys. Update on new releases.
+  tag: "0.5.0"   # Pin to a known good release for org deploys. Update on new releases.
   pullPolicy: IfNotPresent
 
 replicaCount: 2   # Increase for larger orgs / higher query volume
@@ -23,6 +23,7 @@ oidc:
   issuer: ""       # e.g. https://login.example.com/realms/mq-sentinel
   audience: ""     # e.g. mq-sentinel
   jwksUrl: ""      # e.g. https://login.example.com/realms/mq-sentinel/protocol/openid-connect/certs
+  scopes: ""       # scopes MCP clients request at SSO sign-in, e.g. "api://<app-id>/.default" (Entra)
 
 # Example for common enterprise IdPs (copy and fill in your values):
 # Okta example:

@@ -12,7 +12,7 @@ I built this as a serious side project to solve a real, high-stakes problem in e
 [![tests 271 passing](https://img.shields.io/badge/tests-271%20passing-success.svg)]()
 [![Org-Ready](https://img.shields.io/badge/org--ready-✓-blue)](docs/ORG-READINESS-PLAN.md)
 
-> **0.4.0** — 8 diagnostic tools across all 10 IBM MQ flavors. Read-only by design. Prompt-injection firewall. OIDC + RBAC. Hash-chained audit. Verified IBM Knowledge Center citations (CI-enforced). Production Helm with HPA + air-gapped packaging.
+> **0.5.0** — 8 diagnostic tools across all 10 IBM MQ flavors. Read-only by design. Prompt-injection firewall. OIDC + RBAC. Hash-chained audit. Verified IBM Knowledge Center citations (CI-enforced). Production Helm with HPA + air-gapped packaging.
 
 **GitHub:** https://github.com/pramodreddyboddu/mq-sentinel  
 **Live Demo:** https://mq-sentinel.io  

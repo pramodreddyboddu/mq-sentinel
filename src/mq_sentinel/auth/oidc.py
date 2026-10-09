@@ -17,6 +17,16 @@ from authlib.jose import JsonWebKey, JsonWebToken  # type: ignore[import-untyped
 from authlib.jose.errors import JoseError  # type: ignore[import-untyped]
 
 
+def parse_bearer(header_value: str | None) -> str | None:
+    """Return the token from an ``Authorization: Bearer <token>`` header value."""
+    if not header_value:
+        return None
+    parts = header_value.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        return None
+    return parts[1].strip() or None
+
+
 class TokenVerificationError(PermissionError):
     """Raised on any token validation failure. Never echoes the token back."""
 

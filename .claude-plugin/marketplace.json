@@ -12,9 +12,29 @@
       "name": "mq-sentinel",
       "source": "./plugins/mq-sentinel",
       "description": "Read-only IBM MQ diagnostic MCP server: channels, DLQ, clusters, Native HA, RDQM, z/OS QSG, multi-instance. Cited root cause, never destructive.",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "category": "devops",
-      "keywords": ["ibm-mq", "mcp", "diagnostics", "observability", "read-only"]
+      "keywords": [
+        "ibm-mq",
+        "mcp",
+        "diagnostics",
+        "observability",
+        "read-only"
+      ]
+    },
+    {
+      "name": "mq-sentinel-org",
+      "source": "./plugins/mq-sentinel-org",
+      "description": "For teams: connect to your organization's central MQ-Sentinel server over HTTPS with SSO. No local MQ client or credentials.",
+      "version": "0.5.0",
+      "category": "devops",
+      "keywords": [
+        "ibm-mq",
+        "mcp",
+        "diagnostics",
+        "read-only",
+        "sso"
+      ]
     }
   ]
 }

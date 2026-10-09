@@ -3,7 +3,7 @@
   "name": "io.github.pramodreddyboddu/mq-sentinel",
   "title": "MQ-Sentinel",
   "description": "Read-only IBM MQ diagnostics for AI agents. Cited root cause, never destructive.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "websiteUrl": "https://github.com/pramodreddyboddu/mq-sentinel",
   "repository": {
     "url": "https://github.com/pramodreddyboddu/mq-sentinel",
@@ -20,7 +20,7 @@
     {
       "registryType": "pypi",
       "identifier": "mq-sentinel",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "registryBaseUrl": "https://pypi.org",
       "runtimeHint": "uvx",
       "transport": {

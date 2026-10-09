@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mq-sentinel": {
+      "type": "http",
+      "url": "${MQS_SENTINEL_URL}"
+    }
+  }
+}

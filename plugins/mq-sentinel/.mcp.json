@@ -2,7 +2,7 @@
   "mcpServers": {
     "mq-sentinel": {
       "command": "uvx",
-      "args": ["--from", "${MQS_PACKAGE:-mq-sentinel==0.4.0}", "mq-sentinel", "serve"],
+      "args": ["--from", "${MQS_PACKAGE:-mq-sentinel==0.5.0}", "mq-sentinel", "serve"],
       "env": {
         "MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV": "${MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV:-true}",
         "MQS_SERVER_ENVIRONMENT": "${MQS_SERVER_ENVIRONMENT:-dev}",

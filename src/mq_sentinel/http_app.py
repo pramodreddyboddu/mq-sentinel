@@ -1,15 +1,19 @@
 """HTTP transport — Starlette ASGI app with OIDC bearer auth.
 
 Exposes:
+  - /mcp                — MCP Streamable HTTP (Bearer auth). What Claude Code,
+                          Claude Desktop, Cursor etc. connect to.
+  - GET  /.well-known/oauth-protected-resource/mcp — RFC 9728 metadata naming
+                          the org IdP, so MCP clients can run the SSO sign-in
   - GET  /healthz       — liveness probe (no auth)
   - GET  /readyz        — readiness probe (no auth)
   - GET  /metrics       — Prometheus metrics (no auth; intended for cluster scrape)
   - GET  /mcp/tools     — list available tools (no auth — names + descriptions only)
   - POST /mcp/tools/call — invoke a tool (Bearer auth required)
 
-The POST endpoint forwards (token, tool, params) to MQSentinelServer.dispatch,
-so all middleware (auth verify, rate limit, allowlist, sanitizer, audit)
-applies uniformly with the stdio transport.
+Both /mcp and POST /mcp/tools/call forward (token, tool, params) to
+MQSentinelServer.dispatch, so all middleware (auth verify, rate limit,
+allowlist, sanitizer, audit) applies uniformly with the stdio transport.
 
 TLS termination is expected at the ingress (K8s) — the app itself runs HTTP
 internally. CORS is closed by default; add an origin allowlist if needed.
@@ -17,8 +21,14 @@ internally. CORS is closed by default; add an origin allowlist if needed.
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
+from urllib.parse import urlparse
 
+import anyio
+from mcp.server.fastmcp.server import StreamableHTTPASGIApp
+from mcp.server.transport_security import TransportSecuritySettings
 from prometheus_client import (
     CONTENT_TYPE_LATEST,
     Counter,
@@ -26,17 +36,19 @@ from prometheus_client import (
     generate_latest,
 )
 from starlette.applications import Starlette
+from starlette.datastructures import Headers
 from starlette.middleware import Middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
-from starlette.types import ASGIApp
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from mq_sentinel import __version__
-from mq_sentinel.auth.oidc import TokenVerificationError
+from mq_sentinel.auth.oidc import TokenVerificationError, parse_bearer
 from mq_sentinel.auth.rbac import AuthorizationError
-from mq_sentinel.server import MQSentinelServer
+from mq_sentinel.config import Settings
+from mq_sentinel.server import MQSentinelServer, build_mcp
 from mq_sentinel.telemetry import get_logger
 
 _MAX_BODY_BYTES = 64 * 1024
@@ -110,14 +122,82 @@ class _MetricsMiddleware(BaseHTTPMiddleware):
 
 
 def _extract_bearer(request: Request) -> str | None:
-    auth = request.headers.get("authorization") or request.headers.get("Authorization")
-    if not auth:
-        return None
-    parts = auth.split()
-    if len(parts) != 2 or parts[0].lower() != "bearer":
-        return None
-    token = parts[1].strip()
-    return token or None
+    return parse_bearer(request.headers.get("authorization"))
+
+
+class _BearerGate:
+    """Authenticate every request to the MCP endpoint before it reaches the SDK.
+
+    Missing or invalid tokens get a 401 whose WWW-Authenticate header points at
+    the OAuth protected-resource metadata, which is how MCP clients discover the
+    org IdP and start the SSO sign-in. Authorization (RBAC per QM) still happens
+    per tool call in MQSentinelServer.dispatch.
+    """
+
+    def __init__(
+        self,
+        app: ASGIApp,
+        server: MQSentinelServer,
+        *,
+        allow_anonymous: bool,
+        resource_metadata_url: str | None,
+    ) -> None:
+        self._app = app
+        self._server = server
+        self._allow_anonymous = allow_anonymous
+        self._resource_metadata_url = resource_metadata_url
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            token = parse_bearer(Headers(scope=scope).get("authorization"))
+            if token is None and not self._allow_anonymous:
+                await self._deny(scope, receive, send, error=None)
+                return
+            if token is not None:
+                try:
+                    await anyio.to_thread.run_sync(self._server.authenticate, token)
+                except TokenVerificationError:
+                    await self._deny(scope, receive, send, error="invalid_token")
+                    return
+        await self._app(scope, receive, send)
+
+    async def _deny(self, scope: Scope, receive: Receive, send: Send, *, error: str | None) -> None:
+        challenge = 'Bearer realm="mq-sentinel"'
+        if error:
+            challenge += f', error="{error}"'
+        if self._resource_metadata_url:
+            challenge += f', resource_metadata="{self._resource_metadata_url}"'
+        body = {"error": error or "missing_bearer_token"}
+        response = JSONResponse(body, status_code=401, headers={"WWW-Authenticate": challenge})
+        await response(scope, receive, send)
+
+
+def _resource_url(settings: Settings) -> str:
+    if settings.server.public_url:
+        return settings.server.public_url.rstrip("/")
+    return f"http://{settings.server.http_host}:{settings.server.http_port}/mcp"
+
+
+def _metadata_path(resource_url: str) -> str:
+    """RFC 9728: /.well-known/oauth-protected-resource + the resource's path."""
+    return "/.well-known/oauth-protected-resource" + urlparse(resource_url).path
+
+
+def _transport_security(settings: Settings) -> TransportSecuritySettings:
+    """Host/Origin checks against DNS rebinding for loopback or a known public URL."""
+    hosts = ["127.0.0.1:*", "localhost:*", "[::1]:*"]
+    origins = ["http://127.0.0.1:*", "http://localhost:*", "http://[::1]:*"]
+    if settings.server.public_url:
+        public = urlparse(settings.server.public_url)
+        hosts.append(public.netloc)
+        origins.append(f"{public.scheme}://{public.netloc}")
+    elif settings.server.http_host not in ("127.0.0.1", "localhost", "::1"):
+        # Behind an ingress with no public_url configured, the Host header is
+        # unknown here; set MQS_SERVER_PUBLIC_URL to enable the check.
+        return TransportSecuritySettings(enable_dns_rebinding_protection=False)
+    return TransportSecuritySettings(
+        enable_dns_rebinding_protection=True, allowed_hosts=hosts, allowed_origins=origins
+    )
 
 
 # --- endpoints --------------------------------------------------------------
@@ -207,15 +287,64 @@ def _make_tools_call(server: MQSentinelServer) -> Any:
 
 
 def build_http_app(server: MQSentinelServer) -> ASGIApp:
+    settings = server.settings
+    local_dev = settings.auth.disable_auth_for_local_dev
+    mcp = build_mcp(
+        server,
+        # Local dev only: tokenless MCP clients act as the local-dev principal.
+        default_token="http-local-dev" if local_dev else None,
+        streamable_http_path="/mcp",
+        # Stateless + JSON: any replica can serve any request (HPA, no sticky
+        # sessions), and each request carries its own caller identity.
+        stateless_http=True,
+        json_response=True,
+        transport_security=_transport_security(settings),
+    )
+    mcp.streamable_http_app()  # initialises mcp.session_manager
+
+    resource_url = _resource_url(settings)
+    advertise_idp = bool(settings.auth.oidc_issuer) and not local_dev
+    metadata_path = _metadata_path(resource_url)
+    metadata_url = (
+        f"{urlparse(resource_url).scheme}://{urlparse(resource_url).netloc}{metadata_path}"
+        if advertise_idp
+        else None
+    )
+
+    async def protected_resource_metadata(_: Request) -> Response:
+        doc: dict[str, Any] = {
+            "resource": resource_url,
+            "authorization_servers": [settings.auth.oidc_issuer],
+            "bearer_methods_supported": ["header"],
+            "resource_name": "MQ-Sentinel",
+        }
+        if settings.auth.oidc_scopes:
+            doc["scopes_supported"] = settings.auth.oidc_scopes.split()
+        return JSONResponse(doc)
+
+    @asynccontextmanager
+    async def lifespan(_: Starlette) -> AsyncIterator[None]:
+        async with mcp.session_manager.run():
+            yield
+
+    gate = _BearerGate(
+        StreamableHTTPASGIApp(mcp.session_manager),
+        server,
+        allow_anonymous=local_dev,
+        resource_metadata_url=metadata_url,
+    )
     routes = [
+        Route("/mcp", gate),
         Route("/healthz", _healthz, methods=["GET"]),
         Route("/readyz", _readyz, methods=["GET"]),
         Route("/metrics", _metrics, methods=["GET"]),
         Route("/mcp/tools", _tools_list, methods=["GET"]),
         Route("/mcp/tools/call", _make_tools_call(server), methods=["POST"]),
     ]
+    if advertise_idp:
+        routes.append(Route(metadata_path, protected_resource_metadata, methods=["GET"]))
     middleware = [Middleware(_MetricsMiddleware)]
-    return Starlette(routes=routes, middleware=middleware)
+    return Starlette(routes=routes, middleware=middleware, lifespan=lifespan)
 
 
 def serve_http(

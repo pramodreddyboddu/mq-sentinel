@@ -1,7 +1,7 @@
 {
-  "name": "mq-sentinel",
+  "name": "mq-sentinel-org",
   "version": "0.5.0",
-  "description": "Read-only IBM MQ diagnostics for AI agents. Cited root cause, never destructive.",
+  "description": "Connect Claude Code to your organization's central MQ-Sentinel server (read-only IBM MQ diagnostics, SSO sign-in).",
   "author": {
     "name": "Pramod Boddu",
     "url": "https://github.com/pramodreddyboddu"
@@ -9,5 +9,5 @@
   "homepage": "https://github.com/pramodreddyboddu/mq-sentinel",
   "repository": "https://github.com/pramodreddyboddu/mq-sentinel",
   "license": "Proprietary",
-  "keywords": ["ibm-mq", "mcp", "diagnostics", "observability", "read-only"]
+  "keywords": ["ibm-mq", "mcp", "diagnostics", "observability", "read-only", "sso"]
 }

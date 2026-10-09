@@ -1,6 +1,6 @@
 [project]
 name = "mq-sentinel"
-version = "0.4.0"
+version = "0.5.0"
 description = "MQ-Sentinel — production-grade, read-only IBM MQ diagnostic MCP server for AI agents. Zero hallucinations. Built for trust in enterprise environments."
 readme = "README.md"
 requires-python = ">=3.12"

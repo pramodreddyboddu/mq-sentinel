@@ -38,7 +38,7 @@ APP.SVRCONN on DEMO_QM is RETRYING with 2035. What's wrong?
 3. Write an inventory and a secrets directory, then export these before starting Claude Code:
 
 ```bash
-export MQS_PACKAGE='mq-sentinel[mq]==0.4.0'        # adds pymqi (needs the MQ client)
+export MQS_PACKAGE='mq-sentinel[mq]==0.5.0'        # adds pymqi (needs the MQ client)
 export MQS_SERVER_INVENTORY_DIR=~/.mq-sentinel/inventory
 export MQS_SERVER_SECRETS_DIR=~/.mq-sentinel/secrets
 ```
@@ -58,7 +58,7 @@ qms:
 
 Run `/mq-status`. It should say **live** and list `PROD_QM1`.
 
-Prod queue managers need the `prod-read` role. With the local-dev stub (stdio), only `dev`/`staging`/`nonprod` QMs are readable. Use the HTTP transport with OIDC for prod ([http-transport.md](../../docs/http-transport.md), [oidc-examples.md](../../docs/oidc-examples.md)).
+Prod queue managers need the `prod-read` role. With the local-dev stub (stdio), only `dev`/`staging`/`nonprod` QMs are readable. For prod, and for teams, run one central server with SSO and have everyone install the **`mq-sentinel-org`** plugin instead ([its README](../mq-sentinel-org/README.md), [http-transport.md](../../docs/http-transport.md)).
 
 ## Configuration
 
@@ -66,7 +66,7 @@ All of these are read from your shell environment when Claude Code starts:
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `MQS_PACKAGE` | `mq-sentinel==0.4.0` | Package spec for `uvx`. Use `mq-sentinel[mq]==0.4.0` for live QMs. |
+| `MQS_PACKAGE` | `mq-sentinel==0.5.0` | Package spec for `uvx`. Use `mq-sentinel[mq]==0.5.0` for live QMs. |
 | `MQS_SERVER_CONNECTOR` | `auto` | `auto` (live if an inventory is set), `fixture`, or `pymqi`. |
 | `MQS_SERVER_INVENTORY_DIR` | *(empty)* | Directory of `*.yaml` inventory files. |
 | `MQS_SERVER_SECRETS_DIR` | *(empty)* | One subdirectory per `secret_ref`, holding `username` and `password`. Must not be world-readable. |

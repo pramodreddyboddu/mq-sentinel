@@ -12,6 +12,11 @@ MQ-Sentinel is one server. Any client that speaks [Model Context Protocol](https
 | **ChatGPT** | **remote HTTPS only** | Settings → Apps → Developer Mode → custom connector |
 | **VS Code Copilot** | stdio or HTTP | `.vscode/mcp.json` |
 
+**Two ways to run it:**
+
+- **Local (one person):** each client starts `mq-sentinel serve` over stdio, as in the sections below. Good for demos and your own non-prod QMs.
+- **Central (an organization):** run one MQ-Sentinel server with the HTTP transport and SSO, and point every client at `https://<your-server>/mcp` as a remote MCP server. Engineers need no MQ client and no MQ credentials, and prod access follows their SSO groups. Setup: [http-transport.md](http-transport.md). Claude Code users install the `mq-sentinel-org` plugin.
+
 Demo mode (no live IBM MQ) uses the bundled fixture sandbox.
 
 ```bash
@@ -51,7 +56,7 @@ grok mcp add mq-sentinel \
        --security-opt no-new-privileges:true \
        -e MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV \
        -e MQS_SERVER_ENVIRONMENT \
-       ghcr.io/pramodreddyboddu/mq-sentinel:0.4.0 \
+       ghcr.io/pramodreddyboddu/mq-sentinel:0.5.0 \
        serve --transport stdio
 ```
 

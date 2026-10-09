@@ -29,6 +29,9 @@ class AuthConfig(BaseSettings):
     oidc_issuer: str | None = None
     oidc_audience: str | None = None
     oidc_jwks_url: str | None = None
+    oidc_scopes: str | None = None
+    """Space-separated scopes MCP clients should request from the IdP, e.g.
+    ``api://mq-sentinel/.default`` (Entra). Advertised in OAuth resource metadata."""
     disable_auth_for_local_dev: bool = False
     """ONLY set true on a developer laptop. CI refuses production builds with this on."""
 
@@ -63,6 +66,10 @@ class ServerConfig(BaseSettings):
 
     connector: Literal["auto", "fixture", "pymqi"] = "auto"
     """auto: live pymqi when an inventory is configured, else the demo fixtures."""
+
+    public_url: str | None = None
+    """External URL of the MCP endpoint, e.g. https://mq-sentinel.example.com/mcp.
+    Used as the OAuth resource identifier and as an allowed Host header."""
 
     secrets_dir: str | None = None
     """Filesystem secrets root (one subdirectory per secret_ref). Required for pymqi."""

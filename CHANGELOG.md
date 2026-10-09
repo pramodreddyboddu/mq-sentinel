@@ -6,6 +6,16 @@ All notable changes to MQ-Sentinel are documented here. The format is loosely ba
 
 ---
 
+## [0.5.0] — Central server for teams: MCP over HTTP with SSO
+
+- **`/mcp` MCP Streamable HTTP endpoint.** Claude Code, Claude Desktop, Cursor and other MCP clients can now connect to one central MQ-Sentinel server as a remote MCP server. The HTTP transport used to be a custom REST API that no AI client could use. It's stateless with JSON responses, so any replica can serve any request.
+- **Per-caller identity.** Every request is authenticated, and each tool call reads its caller's token from its own request. RBAC (`prod-read` / `nonprod-read`), rate limits and the audit log apply per person, and concurrent users never share an identity.
+- **SSO sign-in groundwork.** Missing or invalid tokens get a `401` with `WWW-Authenticate: ... resource_metadata=...`, and `/.well-known/oauth-protected-resource/mcp` (RFC 9728) names the OIDC issuer. MCP clients use this to open the IdP's login page. New settings: `MQS_SERVER_PUBLIC_URL` (OAuth resource id and allowed Host) and `MQS_AUTH_OIDC_SCOPES`. The Helm chart derives the public URL from the ingress host, and has `oidc.scopes`.
+- **DNS-rebinding protection** on `/mcp`: only localhost and the public URL's host are accepted.
+- Tools run in worker threads, so one slow queue manager doesn't block other users. The server reports MQ-Sentinel's version and usage instructions to MCP clients.
+- **`mq-sentinel-org` plugin** for Claude Code: connects to `$MQS_SENTINEL_URL` over HTTP, with the same `mq-triage` skill and `/mq-health`, `/mq-status` commands. A test keeps the two plugins' files identical and every version in step with the package.
+- The REST API (`POST /mcp/tools/call`) is unchanged, for scripts and CI.
+
 ## [0.4.0] — Live queue managers, Claude Code plugin, install fixes
 
 ### Live IBM MQ

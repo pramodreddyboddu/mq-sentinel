@@ -30,3 +30,7 @@ output/
 tmp/
 requirements-audit.txt
 requirements-runtime.txt
+
+# iCloud Drive conflict copies ("file 2.md", ".coverage 2")
+* 2
+* 2.*

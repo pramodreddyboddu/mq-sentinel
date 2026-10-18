@@ -45,7 +45,7 @@ Use this structure:
    - root cause, from the tool's `root_cause`
    - evidence, from the tool's `evidence` (channel, status, reason code, queue depth…)
    - IBM documentation link(s), from `doc_refs`, exactly as returned
-3. **Next steps as MQSC:** first the investigation commands from `fix_steps` and `verify_commands` (all `DISPLAY`), then any `remediation_steps`, labelled as changes the user must review and run in their own change window.
+3. **Next steps as MQSC:** first the investigation commands from `fix_steps` and `verify_commands` (`DISPLAY`, plus `PING CHANNEL`, which only tests the connection), then any `remediation_steps`, labelled as changes the user must review and run in their own change window.
 4. **Gaps:** anything the tool couldn't see (see the rules below).
 
 `examples/demo-health-check.md` shows a complete report from demo mode.

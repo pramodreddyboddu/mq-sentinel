@@ -42,7 +42,7 @@ Each diagnostic tool returns:
 }
 ```
 
-`summary` appears only on `full_mq_health_check`. `fix_steps` and `verify_commands` are always `DISPLAY` commands. `remediation_steps` may change state: present them for the user to review, never as done.
+`summary` appears only on `full_mq_health_check`. `fix_steps` and `verify_commands` are investigation commands: `DISPLAY`, and `PING CHANNEL`, which only tests that a channel can connect. `remediation_steps` may change state: present them for the user to review, never as done.
 
 ## Severity
 

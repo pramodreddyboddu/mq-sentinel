@@ -32,3 +32,10 @@ def test_templates_pin_the_package_version(tmp_path: Path) -> None:
     builder.build(tmp_path)
     claude = (tmp_path / "ibm-mq-diagnostics" / "templates" / "claude-code.mcp.json").read_text()
     assert f"mq-sentinel=={builder.package_version()}" in claude
+
+
+def test_flat_variant_puts_skill_md_at_zip_root(tmp_path: Path) -> None:
+    archive = _builder().build(tmp_path, flat=True)
+    names = zipfile.ZipFile(archive).namelist()
+    assert "SKILL.md" in names
+    assert not any(n.startswith("ibm-mq-diagnostics/") for n in names)

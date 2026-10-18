@@ -119,6 +119,7 @@ release: ci docker pkg  ## Full release pipeline (run in CI)
 
 agensi:              ## Build the Agensi skill zip (dist/agensi/)
 	uv run python packaging/agensi/build_skill.py
+	uv run python packaging/agensi/build_skill.py --flat
 
 clean:               ## Remove build artifacts
 	rm -rf $(DIST_DIR) build *.egg-info .pytest_cache .mypy_cache .ruff_cache htmlcov coverage.xml

@@ -127,19 +127,26 @@ def check(staged: Path) -> None:
         QMEntry(**item)  # the template must load on the real server
 
 
-def build(out_dir: Path) -> Path:
+def build(out_dir: Path, *, flat: bool = False) -> Path:
+    """Zip the skill. Default: one top-level folder holding SKILL.md (Agensi's
+    published checklist). ``flat``: SKILL.md at the zip root instead, the
+    layout Agensi's support described; kept ready in case review asks for it.
+    """
     version = package_version()
     out_dir.mkdir(parents=True, exist_ok=True)
     staged = stage(out_dir, version)
     check(staged)
-    archive = out_dir / f"{SKILL}-{version}.zip"
+    suffix = "-flat" if flat else ""
+    archive = out_dir / f"{SKILL}-{version}{suffix}.zip"
+    base = staged if flat else out_dir
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zf:
         for path in sorted(staged.rglob("*")):
             if path.is_file():
-                zf.write(path, path.relative_to(out_dir).as_posix())
+                zf.write(path, path.relative_to(base).as_posix())
     return archive
 
 
 if __name__ == "__main__":
-    target = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "dist" / "agensi"
-    print(build(target))
+    args = [a for a in sys.argv[1:] if a != "--flat"]
+    target = Path(args[0]) if args else ROOT / "dist" / "agensi"
+    print(build(target, flat="--flat" in sys.argv))

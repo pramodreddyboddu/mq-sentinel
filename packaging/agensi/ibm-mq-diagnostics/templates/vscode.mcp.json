@@ -1,0 +1,14 @@
+{
+  "servers": {
+    "mq-sentinel": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mq-sentinel=={{VERSION}}", "serve"],
+      "env": {
+        "MQS_SERVER_ENVIRONMENT": "dev",
+        "MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV": "true",
+        "MQS_AUDIT_LOG_PATH": "${userHome}/.mq-sentinel/audit.jsonl"
+      }
+    }
+  }
+}

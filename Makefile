@@ -8,7 +8,7 @@ ARCH       ?= x86_64
 DIST_DIR   := dist
 PKG_DIR    := $(DIST_DIR)/pkg
 
-.PHONY: help install dev test lint type security ci docker rpm deb pkg clean release demo demo-fast demo-record
+.PHONY: help install dev test lint type security ci docker rpm deb pkg clean release demo demo-fast demo-record agensi
 
 help:                ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -116,6 +116,9 @@ pkg: rpm deb         ## Build all OS packages
 release: ci docker pkg  ## Full release pipeline (run in CI)
 	@echo "Release artifacts in $(DIST_DIR):"
 	@ls -la $(DIST_DIR) $(PKG_DIR) 2>/dev/null || true
+
+agensi:              ## Build the Agensi skill zip (dist/agensi/)
+	uv run python packaging/agensi/build_skill.py
 
 clean:               ## Remove build artifacts
 	rm -rf $(DIST_DIR) build *.egg-info .pytest_cache .mypy_cache .ruff_cache htmlcov coverage.xml

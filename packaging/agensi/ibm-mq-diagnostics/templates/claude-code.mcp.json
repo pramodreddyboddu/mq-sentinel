@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "mq-sentinel": {
+      "command": "uvx",
+      "args": ["mq-sentinel=={{VERSION}}", "serve"],
+      "env": {
+        "MQS_SERVER_ENVIRONMENT": "dev",
+        "MQS_AUTH_DISABLE_AUTH_FOR_LOCAL_DEV": "true",
+        "MQS_AUDIT_LOG_PATH": "${HOME}/.mq-sentinel/audit.jsonl",
+        "MQS_SERVER_INVENTORY_DIR": "${MQS_SERVER_INVENTORY_DIR:-}",
+        "MQS_SERVER_SECRETS_DIR": "${MQS_SERVER_SECRETS_DIR:-}"
+      }
+    }
+  }
+}

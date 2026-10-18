@@ -1,0 +1,25 @@
+# MQ-Sentinel inventory. Put this file in the directory named by
+# MQS_SERVER_INVENTORY_DIR. Every *.yaml there is loaded at startup.
+#
+# Credentials never go here. `secret_ref` names a directory under
+# MQS_SERVER_SECRETS_DIR that holds `username` and `password` files
+# (optional for TLS: `keystore_path`, `cert_label`).
+
+qms:
+  - qm_name: DEV_QM1               # queue manager name (uppercase)
+    host: mq-dev1.example.internal # use "localhost" when MQ-Sentinel runs on the QM host
+    port: 1414
+    channel: MQS.SVRCONN           # dedicated, display-only SVRCONN channel
+    environment: dev               # dev | staging | nonprod | prod
+    topology_hint: standalone      # optional; topology is also auto-detected
+    secret_ref: dev/qm1
+    cipher_spec: ANY_TLS13_OR_HIGHER   # omit for plain TCP (not recommended)
+
+  - qm_name: TEST_QM_HA
+    host: mq-test-ha.example.internal
+    port: 1414
+    channel: MQS.SVRCONN
+    environment: nonprod
+    topology_hint: native_ha
+    secret_ref: nonprod/test-ha
+    cipher_spec: ANY_TLS13_OR_HIGHER

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mq-sentinel": {
+      "type": "http",
+      "url": "https://mq-sentinel.internal.example.com/mcp"
+    }
+  }
+}
